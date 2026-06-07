@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/Button'
 
 export function CreateUserForm() {
   const router = useRouter()
-  const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'organizer' })
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+    full_name: '',
+    committee: '',
+    role: 'organizer',
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -31,7 +37,7 @@ export function CreateUserForm() {
     }
 
     setSuccess(true)
-    setForm({ email: '', password: '', full_name: '', role: 'organizer' })
+    setForm({ email: '', password: '', full_name: '', committee: '', role: 'organizer' })
     router.refresh()
     setTimeout(() => setSuccess(false), 3000)
   }
@@ -40,8 +46,9 @@ export function CreateUserForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Full name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Full name *</label>
           <input
+            required
             value={form.full_name}
             onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -55,9 +62,18 @@ export function CreateUserForm() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="organizer">Organizer</option>
+            <option value="scanner">Scanner</option>
             <option value="admin">Admin</option>
           </select>
         </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Committee</label>
+        <input
+          value={form.committee}
+          onChange={(e) => setForm((p) => ({ ...p, committee: e.target.value }))}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
@@ -81,8 +97,8 @@ export function CreateUserForm() {
         />
       </div>
       {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-      {success && <p className="text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">User created successfully.</p>}
-      <Button type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create user'}</Button>
+      {success && <p className="text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">Account created successfully.</p>}
+      <Button type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create account'}</Button>
     </form>
   )
 }

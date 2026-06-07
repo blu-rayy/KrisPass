@@ -4,7 +4,6 @@ import { formatDateShort } from '@/lib/utils'
 
 export default async function EventsPage() {
   const service = createServiceClient()
-
   const { data: events } = await service
     .from('events')
     .select('*')
@@ -12,18 +11,17 @@ export default async function EventsPage() {
 
   const eventsWithStats = await Promise.all(
     (events ?? []).map(async (event) => {
-      const { count: total } = await service
-        .from('participants')
+      const { count: rosterCount } = await service
+        .from('event_roster')
         .select('*', { count: 'exact', head: true })
         .eq('event_id', event.id)
 
-      const { count: checkedIn } = await service
-        .from('participants')
+      const { count: attendanceCount } = await service
+        .from('attendances')
         .select('*', { count: 'exact', head: true })
         .eq('event_id', event.id)
-        .eq('checked_in', true)
 
-      return { ...event, participant_count: total ?? 0, checked_in_count: checkedIn ?? 0 }
+      return { ...event, roster_count: rosterCount ?? 0, attendance_count: attendanceCount ?? 0 }
     })
   )
 
@@ -51,8 +49,8 @@ export default async function EventsPage() {
               <tr>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Event</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Date</th>
-                <th className="text-right px-5 py-3 font-medium text-gray-600">Participants</th>
-                <th className="text-right px-5 py-3 font-medium text-gray-600">Checked in</th>
+                <th className="text-right px-5 py-3 font-medium text-gray-600">Roster</th>
+                <th className="text-right px-5 py-3 font-medium text-gray-600">Attended</th>
                 <th className="px-5 py-3" />
               </tr>
             </thead>
@@ -68,12 +66,12 @@ export default async function EventsPage() {
                     )}
                   </td>
                   <td className="px-5 py-3 text-gray-600">{formatDateShort(event.event_date)}</td>
-                  <td className="px-5 py-3 text-right text-gray-700">{event.participant_count}</td>
+                  <td className="px-5 py-3 text-right text-gray-700">{event.roster_count}</td>
                   <td className="px-5 py-3 text-right">
-                    <span className="text-gray-700">{event.checked_in_count}</span>
-                    {event.participant_count > 0 && (
+                    <span className="text-gray-700">{event.attendance_count}</span>
+                    {event.roster_count > 0 && (
                       <span className="text-gray-400 ml-1">
-                        ({Math.round((event.checked_in_count / event.participant_count) * 100)}%)
+                        ({Math.round((event.attendance_count / event.roster_count) * 100)}%)
                       </span>
                     )}
                   </td>

@@ -4,8 +4,16 @@ import QRCode from 'react-qr-code'
 import { formatDate } from '@/lib/utils'
 
 interface PassCardProps {
-  fullName: string
   qrToken: string
+  participant: {
+    first_name: string
+    last_name: string
+    middle_name: string | null
+    suffix: string | null
+    school_email: string
+    school: string | null
+    student_number: string | null
+  } | null
   event: {
     name: string
     event_date: string
@@ -13,7 +21,11 @@ interface PassCardProps {
   } | null
 }
 
-export function PassCard({ fullName, qrToken, event }: PassCardProps) {
+export function PassCard({ qrToken, participant, event }: PassCardProps) {
+  const fullName = participant
+    ? `${participant.first_name}${participant.middle_name ? ` ${participant.middle_name}` : ''} ${participant.last_name}${participant.suffix ? ` ${participant.suffix}` : ''}`
+    : 'Unknown'
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
@@ -36,6 +48,12 @@ export function PassCard({ fullName, qrToken, event }: PassCardProps) {
           <div className="text-center">
             <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Participant</p>
             <p className="text-xl font-bold text-gray-900">{fullName}</p>
+            {participant?.student_number && (
+              <p className="text-sm text-gray-500 mt-0.5">{participant.student_number}</p>
+            )}
+            {participant?.school && (
+              <p className="text-xs text-gray-400 mt-0.5">{participant.school}</p>
+            )}
           </div>
 
           <p className="text-xs text-gray-300 font-mono break-all text-center">{qrToken}</p>

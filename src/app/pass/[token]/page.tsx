@@ -11,8 +11,8 @@ export default async function PassPage({ params }: { params: { token: string } }
 
   return (
     <PassCard
-      fullName={data.full_name}
       qrToken={data.qr_token}
+      participant={data.participant}
       event={data.event}
     />
   )

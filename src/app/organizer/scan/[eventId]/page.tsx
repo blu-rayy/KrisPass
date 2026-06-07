@@ -45,9 +45,13 @@ export default function ScanPage({ params }: { params: { eventId: string } }) {
     not_found: 'bg-red-50 border-red-300 text-red-800',
   }
 
+  const pName = lastResult?.participant
+    ? `${lastResult.participant.last_name}, ${lastResult.participant.first_name}`
+    : ''
+
   const resultMessages = {
-    success: `✓ Checked in — ${lastResult?.participant?.full_name}`,
-    duplicate: `Already checked in — ${lastResult?.participant?.full_name}`,
+    success: `✓ Attended — ${pName}`,
+    duplicate: `Already recorded — ${pName}`,
     not_found: 'QR code not recognized',
   }
 

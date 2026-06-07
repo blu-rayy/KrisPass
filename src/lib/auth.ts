@@ -14,9 +14,3 @@ export async function getProfile(): Promise<Profile | null> {
 
   return data as Profile | null
 }
-
-export async function requireAuth() {
-  const profile = await getProfile()
-  if (!profile) return null
-  return profile
-}

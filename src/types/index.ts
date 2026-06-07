@@ -1,49 +1,66 @@
-export type Role = 'admin' | 'organizer'
+export type Role = 'admin' | 'organizer' | 'scanner'
 
 export interface Profile {
   id: string
-  email: string
+  full_name: string
   role: Role
-  full_name: string | null
+  committee: string | null
   created_at: string
+}
+
+export interface Participant {
+  id: string
+  last_name: string
+  first_name: string
+  middle_name: string | null
+  suffix: string | null
+  school_email: string
+  personal_email: string
+  contact_no: string | null
+  school: string | null
+  student_number: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Block {
+  id: string
+  code: string
 }
 
 export interface Event {
   id: string
   name: string
-  description: string | null
   event_date: string
   location: string | null
-  created_by: string
+  created_by: string | null
   created_at: string
 }
 
 export interface EventWithStats extends Event {
-  participant_count: number
-  checked_in_count: number
+  roster_count: number
+  attendance_count: number
 }
 
-export interface Participant {
-  id: string
+export interface EventRoster {
   event_id: string
-  full_name: string
-  email: string
-  team: string | null
-  student_id: string | null
+  participant_id: string
   qr_token: string
-  checked_in: boolean
-  checked_in_at: string | null
-  checked_in_by: string | null
   created_at: string
 }
 
-export interface ScanLog {
+export interface Team {
   id: string
-  participant_id: string | null
   event_id: string
-  scanned_by: string | null
+  name: string
+}
+
+export interface Attendance {
+  id: string
+  event_id: string
+  participant_id: string
   scanned_at: string
-  result: 'success' | 'duplicate' | 'not_found'
+  scanned_by: string | null
 }
 
 export type ScanResult = 'success' | 'duplicate' | 'not_found'
@@ -62,4 +79,11 @@ export interface ImportResult {
   inserted: number
   updated: number
   errors: CsvRowError[]
+}
+
+export type ParticipantWithRoster = Participant & {
+  qr_token: string
+  attended: boolean
+  scanned_at: string | null
+  team_name: string | null
 }

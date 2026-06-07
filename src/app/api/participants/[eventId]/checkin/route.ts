@@ -11,44 +11,62 @@ export async function POST(request: Request, { params }: { params: { eventId: st
 
   const service = createServiceClient()
 
-  const { data: participant } = await service
-    .from('participants')
-    .select('*')
+  // Look up event_roster by qr_token + event_id
+  const { data: roster } = await service
+    .from('event_roster')
+    .select('participant_id')
     .eq('qr_token', token)
     .eq('event_id', params.eventId)
     .single()
 
-  if (!participant) {
-    await service.from('scan_log').insert({
-      event_id: params.eventId,
-      scanned_by: user.id,
-      result: 'not_found',
-    })
+  if (!roster) {
     return NextResponse.json({ result: 'not_found' }, { status: 404 })
   }
 
-  if (participant.checked_in) {
-    await service.from('scan_log').insert({
-      participant_id: participant.id,
-      event_id: params.eventId,
-      scanned_by: user.id,
-      result: 'duplicate',
-    })
+  const { participant_id } = roster
+
+  // Check for existing attendance (duplicate)
+  const { data: existing } = await service
+    .from('attendances')
+    .select('id, scanned_at')
+    .eq('event_id', params.eventId)
+    .eq('participant_id', participant_id)
+    .maybeSingle()
+
+  if (existing) {
+    const { data: participant } = await service
+      .from('participants')
+      .select('*')
+      .eq('id', participant_id)
+      .single()
     return NextResponse.json({ result: 'duplicate', participant }, { status: 409 })
   }
 
-  const now = new Date().toISOString()
-  await service
-    .from('participants')
-    .update({ checked_in: true, checked_in_at: now, checked_in_by: user.id })
-    .eq('id', participant.id)
-
-  await service.from('scan_log').insert({
-    participant_id: participant.id,
+  // Insert attendance record
+  const { error: insertError } = await service.from('attendances').insert({
     event_id: params.eventId,
+    participant_id,
     scanned_by: user.id,
-    result: 'success',
   })
 
-  return NextResponse.json({ result: 'success', participant: { ...participant, checked_in: true, checked_in_at: now } })
+  if (insertError) {
+    // Unique constraint violation = race condition duplicate
+    if (insertError.code === '23505') {
+      const { data: participant } = await service
+        .from('participants')
+        .select('*')
+        .eq('id', participant_id)
+        .single()
+      return NextResponse.json({ result: 'duplicate', participant }, { status: 409 })
+    }
+    return NextResponse.json({ error: insertError.message }, { status: 500 })
+  }
+
+  const { data: participant } = await service
+    .from('participants')
+    .select('*')
+    .eq('id', participant_id)
+    .single()
+
+  return NextResponse.json({ result: 'success', participant })
 }

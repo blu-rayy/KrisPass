@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
-import { Participant } from '@/types'
 import { PassListClient } from './PassListClient'
 
 export default async function PassesPage({ params }: { params: { eventId: string } }) {
@@ -9,11 +8,28 @@ export default async function PassesPage({ params }: { params: { eventId: string
   const { data: event } = await service.from('events').select('name').eq('id', params.eventId).single()
   if (!event) notFound()
 
-  const { data: participants } = await service
-    .from('participants')
-    .select('id, full_name, email, team, qr_token')
+  const { data: roster } = await service
+    .from('event_roster')
+    .select(`
+      qr_token,
+      participants (
+        id, last_name, first_name, middle_name, suffix, school_email
+      )
+    `)
     .eq('event_id', params.eventId)
-    .order('full_name')
+
+  const rows = (roster ?? []).map((r) => {
+    const p = r.participants as unknown as Record<string, string | null>
+    return {
+      id: p.id as string,
+      last_name: p.last_name as string,
+      first_name: p.first_name as string,
+      middle_name: p.middle_name,
+      suffix: p.suffix,
+      school_email: p.school_email as string,
+      qr_token: r.qr_token,
+    }
+  }).sort((a, b) => a.last_name.localeCompare(b.last_name))
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
@@ -37,10 +53,7 @@ export default async function PassesPage({ params }: { params: { eventId: string
         </a>
       </div>
 
-      <PassListClient
-        participants={(participants ?? []) as Participant[]}
-        appUrl={appUrl}
-      />
+      <PassListClient rows={rows} appUrl={appUrl} />
     </div>
   )
 }

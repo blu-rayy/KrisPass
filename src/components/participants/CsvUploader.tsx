@@ -14,10 +14,12 @@ interface CsvUploaderProps {
 type State = 'idle' | 'parsing' | 'preview' | 'uploading' | 'done' | 'error'
 
 interface PreviewRow {
-  full_name: string
-  email: string
-  team: string
-  student_id: string
+  last_name: string
+  first_name: string
+  school_email: string
+  personal_email: string
+  block?: string
+  [key: string]: string | undefined
 }
 
 export function CsvUploader({ eventId }: CsvUploaderProps) {
@@ -40,8 +42,19 @@ export function CsvUploader({ eventId }: CsvUploaderProps) {
       skipEmptyLines: true,
       transformHeader: (h) => h.trim().toLowerCase().replace(/\s+/g, '_'),
       complete(results) {
-        if (!results.meta.fields?.includes('full_name') || !results.meta.fields?.includes('email')) {
-          setParseError('CSV must have "full_name" and "email" columns.')
+        const fields = results.meta.fields ?? []
+        if (!fields.includes('last_name') || !fields.includes('first_name')) {
+          setParseError('CSV must have "last_name" and "first_name" columns.')
+          setState('idle')
+          return
+        }
+        if (!fields.includes('school_email')) {
+          setParseError('CSV must have a "school_email" column.')
+          setState('idle')
+          return
+        }
+        if (!fields.includes('personal_email')) {
+          setParseError('CSV must have a "personal_email" column.')
           setState('idle')
           return
         }
@@ -77,28 +90,37 @@ export function CsvUploader({ eventId }: CsvUploaderProps) {
     router.refresh()
   }
 
+  const previewCols = ['last_name', 'first_name', 'school_email', 'personal_email', 'block']
+
   return (
     <div>
       {state === 'idle' && (
-        <div
-          className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover:border-blue-400 transition-colors"
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault()
-            const f = e.dataTransfer.files[0]
-            if (f) handleFile(f)
-          }}
-        >
-          <p className="text-gray-500 text-sm">Drag & drop a CSV file here, or click to browse</p>
-          <p className="text-xs text-gray-400 mt-1">Required columns: <code>full_name</code>, <code>email</code> · Optional: <code>team</code>, <code>student_id</code></p>
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
-          />
+        <div>
+          <div
+            className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover:border-blue-400 transition-colors"
+            onClick={() => inputRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault()
+              const f = e.dataTransfer.files[0]
+              if (f) handleFile(f)
+            }}
+          >
+            <p className="text-gray-500 text-sm">Drag & drop a CSV file here, or click to browse</p>
+            <p className="text-xs text-gray-400 mt-2">
+              Required: <code>last_name</code>, <code>first_name</code>, <code>school_email</code>, <code>personal_email</code>
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Optional: <code>middle_name</code>, <code>suffix</code>, <code>contact_no</code>, <code>school</code>, <code>student_number</code>, <code>block</code>
+            </p>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+            />
+          </div>
         </div>
       )}
 
@@ -121,7 +143,7 @@ export function CsvUploader({ eventId }: CsvUploaderProps) {
             <table className="w-full text-xs">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['full_name', 'email', 'team', 'student_id'].map((col) => (
+                  {previewCols.map((col) => (
                     <th key={col} className="text-left px-4 py-2 font-medium text-gray-600">{col}</th>
                   ))}
                 </tr>
@@ -129,10 +151,9 @@ export function CsvUploader({ eventId }: CsvUploaderProps) {
               <tbody className="divide-y divide-gray-100">
                 {preview.map((row, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-2">{row.full_name}</td>
-                    <td className="px-4 py-2">{row.email}</td>
-                    <td className="px-4 py-2">{row.team ?? '—'}</td>
-                    <td className="px-4 py-2">{row.student_id ?? '—'}</td>
+                    {previewCols.map((col) => (
+                      <td key={col} className="px-4 py-2">{row[col] ?? '—'}</td>
+                    ))}
                   </tr>
                 ))}
               </tbody>

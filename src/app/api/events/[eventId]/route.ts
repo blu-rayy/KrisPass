@@ -25,21 +25,20 @@ export async function GET(_: Request, { params }: { params: { eventId: string } 
 
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const { count: participantCount } = await service
-    .from('participants')
+  const { count: rosterCount } = await service
+    .from('event_roster')
     .select('*', { count: 'exact', head: true })
     .eq('event_id', params.eventId)
 
-  const { count: checkedInCount } = await service
-    .from('participants')
+  const { count: attendanceCount } = await service
+    .from('attendances')
     .select('*', { count: 'exact', head: true })
     .eq('event_id', params.eventId)
-    .eq('checked_in', true)
 
   return NextResponse.json({
     ...data,
-    participant_count: participantCount ?? 0,
-    checked_in_count: checkedInCount ?? 0,
+    roster_count: rosterCount ?? 0,
+    attendance_count: attendanceCount ?? 0,
   })
 }
 

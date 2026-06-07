@@ -18,15 +18,15 @@ export default async function UsersPage() {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-5 py-3 font-medium text-gray-600">Name</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-600">Email</th>
+              <th className="text-left px-5 py-3 font-medium text-gray-600">Committee</th>
               <th className="text-left px-5 py-3 font-medium text-gray-600">Role</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {(users ?? []).map((u: Profile) => (
               <tr key={u.id}>
-                <td className="px-5 py-3 font-medium text-gray-900">{u.full_name ?? '—'}</td>
-                <td className="px-5 py-3 text-gray-500">{u.email}</td>
+                <td className="px-5 py-3 font-medium text-gray-900">{u.full_name}</td>
+                <td className="px-5 py-3 text-gray-500">{u.committee ?? '—'}</td>
                 <td className="px-5 py-3 capitalize text-gray-500">{u.role}</td>
               </tr>
             ))}
@@ -35,7 +35,7 @@ export default async function UsersPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Create organizer account</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">Create staff account</h2>
         <CreateUserForm />
       </div>
     </div>

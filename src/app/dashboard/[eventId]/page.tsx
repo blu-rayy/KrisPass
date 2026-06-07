@@ -2,7 +2,6 @@ import { notFound, redirect } from 'next/navigation'
 import { getProfile } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/server'
 import { DashboardClient } from './DashboardClient'
-import { Participant } from '@/types'
 
 export default async function DashboardPage({ params }: { params: { eventId: string } }) {
   const profile = await getProfile()
@@ -17,16 +16,38 @@ export default async function DashboardPage({ params }: { params: { eventId: str
 
   if (!event) notFound()
 
-  const { data: participants } = await service
-    .from('participants')
-    .select('*')
+  const { count: total } = await service
+    .from('event_roster')
+    .select('*', { count: 'exact', head: true })
     .eq('event_id', params.eventId)
-    .order('checked_in_at', { ascending: false })
+
+  const { data: attendances } = await service
+    .from('attendances')
+    .select(`
+      id,
+      participant_id,
+      scanned_at,
+      participants (last_name, first_name)
+    `)
+    .eq('event_id', params.eventId)
+    .order('scanned_at', { ascending: false })
+
+  const initialAttendances = (attendances ?? []).map((a) => {
+    const p = a.participants as unknown as { last_name: string; first_name: string } | null
+    return {
+      id: a.id,
+      participant_id: a.participant_id,
+      scanned_at: a.scanned_at,
+      participant_name: p ? `${p.last_name}, ${p.first_name}` : 'Unknown',
+      team_name: null,
+    }
+  })
 
   return (
     <DashboardClient
       event={event}
-      initialParticipants={(participants ?? []) as Participant[]}
+      total={total ?? 0}
+      initialAttendances={initialAttendances}
     />
   )
 }

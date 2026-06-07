@@ -7,25 +7,30 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const service = createServiceClient()
-  const { data, error } = await service
+  const { data: events, error } = await service
     .from('events')
-    .select(`
-      *,
-      participant_count:participants(count),
-      checked_in_count:participants(count)
-    `)
+    .select('*')
     .order('event_date', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Flatten counts
-  const events = (data ?? []).map((e: Record<string, unknown>) => ({
-    ...e,
-    participant_count: (e.participant_count as { count: number }[])?.[0]?.count ?? 0,
-    checked_in_count: 0,
-  }))
+  const eventsWithStats = await Promise.all(
+    (events ?? []).map(async (event) => {
+      const { count: rosterCount } = await service
+        .from('event_roster')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event.id)
 
-  return NextResponse.json(events)
+      const { count: attendanceCount } = await service
+        .from('attendances')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event.id)
+
+      return { ...event, roster_count: rosterCount ?? 0, attendance_count: attendanceCount ?? 0 }
+    })
+  )
+
+  return NextResponse.json(eventsWithStats)
 }
 
 export async function POST(request: Request) {
@@ -38,7 +43,7 @@ export async function POST(request: Request) {
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await request.json()
-  const { name, description, event_date, location } = body
+  const { name, event_date, location } = body
 
   if (!name || !event_date) {
     return NextResponse.json({ error: 'name and event_date are required' }, { status: 400 })
@@ -46,7 +51,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await service
     .from('events')
-    .insert({ name, description, event_date, location, created_by: user.id })
+    .insert({ name, event_date, location, created_by: user.id })
     .select()
     .single()
 

@@ -1,9 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
-import { formatDate, formatDateShort } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
-import { Participant } from '@/types'
 
 export default async function EventDetailPage({ params }: { params: { eventId: string } }) {
   const service = createServiceClient()
@@ -16,14 +15,46 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
 
   if (!event) notFound()
 
-  const { data: participants } = await service
-    .from('participants')
-    .select('*')
+  const { data: roster } = await service
+    .from('event_roster')
+    .select(`
+      qr_token,
+      participant_id,
+      participants (
+        id, last_name, first_name, middle_name, suffix, school_email, student_number
+      )
+    `)
     .eq('event_id', params.eventId)
-    .order('full_name')
 
-  const total = participants?.length ?? 0
-  const checkedIn = participants?.filter((p: Participant) => p.checked_in).length ?? 0
+  const { data: attendances } = await service
+    .from('attendances')
+    .select('participant_id, scanned_at')
+    .eq('event_id', params.eventId)
+
+  const attendanceMap = new Map(
+    (attendances ?? []).map((a) => [a.participant_id, a.scanned_at])
+  )
+
+  const total = roster?.length ?? 0
+  const attended = attendances?.length ?? 0
+
+  const rows = (roster ?? [])
+    .map((r) => {
+      const p = r.participants as unknown as Record<string, string | null>
+      return {
+        id: p.id,
+        last_name: p.last_name,
+        first_name: p.first_name,
+        middle_name: p.middle_name,
+        suffix: p.suffix,
+        school_email: p.school_email,
+        student_number: p.student_number,
+        qr_token: r.qr_token,
+        attended: attendanceMap.has(p.id as string),
+        scanned_at: attendanceMap.get(p.id as string) ?? null,
+      }
+    })
+    .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
 
   return (
     <div>
@@ -63,9 +94,9 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
 
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { label: 'Total registered', value: total },
-          { label: 'Checked in', value: checkedIn },
-          { label: 'Remaining', value: total - checkedIn },
+          { label: 'Total on roster', value: total },
+          { label: 'Attended', value: attended },
+          { label: 'Absent', value: total - attended },
         ].map((stat) => (
           <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
@@ -76,7 +107,7 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
 
       {total === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 py-16 text-center text-gray-400">
-          <p className="font-medium">No participants yet</p>
+          <p className="font-medium">No participants on roster yet</p>
           <p className="text-sm mt-1">
             <Link href={`/admin/events/${params.eventId}/upload`} className="text-blue-600 hover:underline">
               Import a CSV roster
@@ -90,25 +121,29 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Name</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Email</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Team</th>
+                <th className="text-left px-5 py-3 font-medium text-gray-600">School email</th>
+                <th className="text-left px-5 py-3 font-medium text-gray-600">Student no.</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Status</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Checked in at</th>
+                <th className="text-left px-5 py-3 font-medium text-gray-600">Scanned at</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {(participants ?? []).map((p: Participant) => (
-                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 font-medium text-gray-900">{p.full_name}</td>
-                  <td className="px-5 py-3 text-gray-500">{p.email}</td>
-                  <td className="px-5 py-3 text-gray-500">{p.team ?? '—'}</td>
+              {rows.map((p) => (
+                <tr key={p.id as string} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-5 py-3 font-medium text-gray-900">
+                    {p.last_name}, {p.first_name}{p.middle_name ? ` ${p.middle_name}` : ''}{p.suffix ? ` ${p.suffix}` : ''}
+                  </td>
+                  <td className="px-5 py-3 text-gray-500">{p.school_email}</td>
+                  <td className="px-5 py-3 text-gray-500">{p.student_number ?? '—'}</td>
                   <td className="px-5 py-3">
-                    <Badge variant={p.checked_in ? 'green' : 'gray'}>
-                      {p.checked_in ? 'Checked in' : 'Not yet'}
+                    <Badge variant={p.attended ? 'green' : 'gray'}>
+                      {p.attended ? 'Attended' : 'Absent'}
                     </Badge>
                   </td>
-                  <td className="px-5 py-3 text-gray-500 text-xs">
-                    {p.checked_in_at ? formatDateShort(p.checked_in_at) : '—'}
+                  <td className="px-5 py-3 text-gray-400 text-xs">
+                    {p.scanned_at
+                      ? new Date(p.scanned_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
+                      : '—'}
                   </td>
                 </tr>
               ))}

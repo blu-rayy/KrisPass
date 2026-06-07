@@ -13,6 +13,7 @@ interface CsvRow {
   contact_no?: string
   school?: string
   student_number?: string
+  degree_program?: string
   block?: string
   [key: string]: string | undefined
 }
@@ -95,6 +96,7 @@ export async function GET(request: Request, { params }: { params: { eventId: str
       contact_no: p.contact_no ?? '',
       school: p.school ?? '',
       student_number: p.student_number ?? '',
+      degree_program: p.degree_program ?? '',
       team: p.team_name ?? '',
       pass_url: `${appUrl}/pass/${p.qr_token}`,
       attended: p.attended ? 'yes' : 'no',
@@ -164,6 +166,7 @@ export async function POST(request: Request, { params }: { params: { eventId: st
       contact_no: row.contact_no?.trim() || null,
       school: row.school?.trim() || null,
       student_number: row.student_number?.trim() || null,
+      degree_program: row.degree_program?.trim() || null,
       updated_at: new Date().toISOString(),
     }
 

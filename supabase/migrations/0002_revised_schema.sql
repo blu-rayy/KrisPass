@@ -66,6 +66,7 @@ create table participants (
   contact_no      text,
   school          text,
   student_number  text,
+  degree_program  text,
   created_at      timestamptz default now(),
   updated_at      timestamptz default now()
 );

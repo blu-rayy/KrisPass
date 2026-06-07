@@ -27,6 +27,7 @@ export interface Participant {
   contact_no: string | null
   school: string | null
   student_number: string | null
+  degree_program: string | null
   created_at: string
   updated_at: string
 }

@@ -88,6 +88,12 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
             View passes
           </Link>
           <Link
+            href={`/organizer/scan/${params.eventId}`}
+            className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+          >
+            Scan QR
+          </Link>
+          <Link
             href={`/dashboard/${params.eventId}`}
             className="text-sm font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >

@@ -238,12 +238,12 @@ create index if not exists idx_participants_school_email on participants(school_
 -- Admin profile (requires auth user to exist first in Supabase Auth dashboard)
 insert into profiles (
   id, last_name, first_name, middle_initial, suffix,
-  student_number, school_email, blocks,
+  student_number, school_email, year_level, degree_program, blocks,
   role, committee
 )
 select
-  id, 'Bautista', 'Kristian', 'D', null,
-  '202311645', 'krbautista@fit.edu.ph', 'TN34',
+  id, 'Bautista', 'Kristian David', 'R', null,
+  '202311645', 'krbautista@fit.edu.ph', '3', 'BSCSSE', 'TN34',
   'admin', 'Secretariat'
 from auth.users
 where email = 'krbautista@fit.edu.ph'
@@ -253,6 +253,8 @@ on conflict (id) do update
       middle_initial = excluded.middle_initial,
       student_number = excluded.student_number,
       school_email   = excluded.school_email,
+      year_level     = excluded.year_level,
+      degree_program = excluded.degree_program,
       blocks         = excluded.blocks,
       role           = excluded.role,
       committee      = excluded.committee;

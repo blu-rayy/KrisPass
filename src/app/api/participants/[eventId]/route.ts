@@ -209,9 +209,10 @@ export async function POST(request: Request, { params }: { params: { eventId: st
       })
     }
 
-    // Handle block assignment
-    if (row.block?.trim()) {
-      const blockCode = row.block.trim().toUpperCase()
+    // Handle block assignment (accept both "block" and "blocks" column names)
+    const blockValue = row.blocks ?? row.block
+    if (blockValue?.trim()) {
+      const blockCode = blockValue.trim().toUpperCase()
       const { data: block } = await service
         .from('blocks')
         .select('id')

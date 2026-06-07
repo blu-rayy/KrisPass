@@ -217,3 +217,46 @@ create index if not exists idx_participants_school_email on participants(school_
 
 -- ── Enable Realtime ─────────────────────────────────────────
 -- Enable via Supabase Dashboard: Database → Replication → attendances
+
+-- ── Seed Data ───────────────────────────────────────────────
+
+-- Admin profile (requires auth user to exist first)
+insert into profiles (id, full_name, role, committee)
+select id, 'Kristian David Bautista', 'admin', 'Secretariat'
+from auth.users
+where email = 'krbautista@fit.edu.ph'
+on conflict (id) do update
+  set full_name = excluded.full_name,
+      role      = excluded.role,
+      committee = excluded.committee;
+
+-- Participant record
+insert into participants (
+  last_name, first_name, middle_name, suffix,
+  school_email, personal_email,
+  contact_no, school, student_number
+) values (
+  'Bautista', 'Kristian David', 'R', null,
+  'krbautista@fit.edu.ph', 'kristiandavidbautista@gmail.com',
+  '09494282770', 'FEU Institute of Technology', '202311645'
+) on conflict (school_email) do update
+  set last_name      = excluded.last_name,
+      first_name     = excluded.first_name,
+      middle_name    = excluded.middle_name,
+      contact_no     = excluded.contact_no,
+      school         = excluded.school,
+      student_number = excluded.student_number,
+      updated_at     = now();
+
+-- Block TN34
+insert into blocks (code)
+values ('TN34')
+on conflict (code) do nothing;
+
+-- Link participant to block TN34
+insert into participant_blocks (participant_id, block_id)
+select p.id, b.id
+from participants p, blocks b
+where p.school_email = 'krbautista@fit.edu.ph'
+  and b.code = 'TN34'
+on conflict do nothing;

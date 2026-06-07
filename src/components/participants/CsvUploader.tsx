@@ -90,7 +90,7 @@ export function CsvUploader({ eventId }: CsvUploaderProps) {
     router.refresh()
   }
 
-  const previewCols = ['last_name', 'first_name', 'school_email', 'personal_email', 'block']
+  const previewCols = ['last_name', 'first_name', 'school_email', 'personal_email', 'blocks']
 
   return (
     <div>
@@ -111,7 +111,7 @@ export function CsvUploader({ eventId }: CsvUploaderProps) {
               Required: <code>last_name</code>, <code>first_name</code>, <code>school_email</code>, <code>personal_email</code>
             </p>
             <p className="text-xs text-gray-400 mt-0.5">
-              Optional: <code>middle_name</code>, <code>suffix</code>, <code>contact_no</code>, <code>school</code>, <code>student_number</code>, <code>block</code>
+              Optional: <code>middle_name</code>, <code>suffix</code>, <code>contact_no</code>, <code>school</code>, <code>student_number</code>, <code>blocks</code>, <code>team_name</code>
             </p>
             <input
               ref={inputRef}

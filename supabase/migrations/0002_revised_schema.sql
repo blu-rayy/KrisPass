@@ -19,11 +19,19 @@ drop table if exists profiles cascade;
 
 -- ── Profiles ────────────────────────────────────────────────
 create table profiles (
-  id          uuid primary key references auth.users on delete cascade,
-  full_name   text not null,
-  role        text not null check (role in ('admin', 'organizer', 'scanner')),
-  committee   text,
-  created_at  timestamptz default now()
+  id              uuid primary key references auth.users on delete cascade,
+  last_name       text not null,
+  first_name      text not null,
+  middle_initial  text,
+  suffix          text,
+  student_number  text,
+  school_email    text,
+  year_level      text,
+  degree_program  text,
+  blocks          text,
+  role            text not null check (role in ('admin', 'organizer', 'scanner')),
+  committee       text,
+  created_at      timestamptz default now()
 );
 
 alter table profiles enable row level security;
@@ -227,11 +235,23 @@ create index if not exists idx_participants_school_email on participants(school_
 -- ── Seed Data ───────────────────────────────────────────────
 
 -- Admin profile (requires auth user to exist first in Supabase Auth dashboard)
-insert into profiles (id, full_name, role, committee)
-select id, 'Kristian David Bautista', 'admin', 'Secretariat'
+insert into profiles (
+  id, last_name, first_name, middle_initial, suffix,
+  student_number, school_email, blocks,
+  role, committee
+)
+select
+  id, 'Bautista', 'Kristian', 'D', null,
+  '202311645', 'krbautista@fit.edu.ph', 'TN34',
+  'admin', 'Secretariat'
 from auth.users
 where email = 'krbautista@fit.edu.ph'
 on conflict (id) do update
-  set full_name = excluded.full_name,
-      role      = excluded.role,
-      committee = excluded.committee;
+  set last_name      = excluded.last_name,
+      first_name     = excluded.first_name,
+      middle_initial = excluded.middle_initial,
+      student_number = excluded.student_number,
+      school_email   = excluded.school_email,
+      blocks         = excluded.blocks,
+      role           = excluded.role,
+      committee      = excluded.committee;

@@ -10,9 +10,15 @@ export async function POST(request: Request) {
   const { data: profile } = await service.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { email, password, full_name, committee, role } = await request.json()
-  if (!email || !password || !full_name) {
-    return NextResponse.json({ error: 'email, password, and full_name are required' }, { status: 400 })
+  const {
+    email, password,
+    last_name, first_name, middle_initial, suffix,
+    student_number, school_email, year_level, degree_program, blocks,
+    committee, role,
+  } = await request.json()
+
+  if (!email || !password || !last_name || !first_name) {
+    return NextResponse.json({ error: 'email, password, last_name, and first_name are required' }, { status: 400 })
   }
 
   const validRoles = ['admin', 'organizer', 'scanner']
@@ -30,7 +36,15 @@ export async function POST(request: Request) {
 
   const { error: profileError } = await service.from('profiles').insert({
     id: newUser.user.id,
-    full_name,
+    last_name,
+    first_name,
+    middle_initial: middle_initial || null,
+    suffix: suffix || null,
+    student_number: student_number || null,
+    school_email: school_email || null,
+    year_level: year_level || null,
+    degree_program: degree_program || null,
+    blocks: blocks || null,
     committee: committee || null,
     role: assignedRole,
   })

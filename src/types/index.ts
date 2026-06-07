@@ -2,7 +2,15 @@ export type Role = 'admin' | 'organizer' | 'scanner'
 
 export interface Profile {
   id: string
-  full_name: string
+  last_name: string
+  first_name: string
+  middle_initial: string | null
+  suffix: string | null
+  student_number: string | null
+  school_email: string | null
+  year_level: string | null
+  degree_program: string | null
+  blocks: string | null
   role: Role
   committee: string | null
   created_at: string

@@ -64,6 +64,7 @@ export async function GET(request: Request, { params }: { params: { eventId: str
     id: string; last_name: string; first_name: string; middle_name: string | null
     suffix: string | null; school_email: string; personal_email: string
     contact_no: string | null; school: string | null; student_number: string | null
+    degree_program: string | null
     qr_token: string; attended: boolean; scanned_at: string | null; team_name: string | null
   }
 
@@ -72,6 +73,7 @@ export async function GET(request: Request, { params }: { params: { eventId: str
       id: string; last_name: string; first_name: string; middle_name: string | null
       suffix: string | null; school_email: string; personal_email: string
       contact_no: string | null; school: string | null; student_number: string | null
+      degree_program: string | null
     }
     return {
       ...p,

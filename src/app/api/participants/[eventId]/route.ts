@@ -115,6 +115,28 @@ export async function GET(request: Request, { params }: { params: { eventId: str
   return NextResponse.json(rows)
 }
 
+export async function DELETE(request: Request, { params }: { params: { eventId: string } }) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const service = createServiceClient()
+  const { data: profile } = await service.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { participantId } = await request.json()
+  if (!participantId) return NextResponse.json({ error: 'participantId required' }, { status: 400 })
+
+  const { error } = await service
+    .from('event_roster')
+    .delete()
+    .eq('event_id', params.eventId)
+    .eq('participant_id', participantId)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 export async function POST(request: Request, { params }: { params: { eventId: string } }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()

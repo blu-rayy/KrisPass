@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils'
-import { Badge } from '@/components/ui/Badge'
+import { RosterTable } from './RosterTable'
 
 export default async function EventDetailPage({ params }: { params: { eventId: string } }) {
   const service = createServiceClient()
@@ -40,7 +40,11 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
 
   const rows = (roster ?? [])
     .map((r) => {
-      const p = r.participants as unknown as Record<string, string | null>
+      const p = r.participants as unknown as {
+        id: string; last_name: string | null; first_name: string | null
+        middle_name: string | null; suffix: string | null
+        school_email: string | null; student_number: string | null
+      }
       return {
         id: p.id,
         last_name: p.last_name,
@@ -50,8 +54,8 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
         school_email: p.school_email,
         student_number: p.student_number,
         qr_token: r.qr_token,
-        attended: attendanceMap.has(p.id as string),
-        scanned_at: attendanceMap.get(p.id as string) ?? null,
+        attended: attendanceMap.has(p.id),
+        scanned_at: attendanceMap.get(p.id) ?? null,
       }
     })
     .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
@@ -116,40 +120,7 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Name</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">School email</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Student no.</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Status</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Scanned at</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {rows.map((p) => (
-                <tr key={p.id as string} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 font-medium text-gray-900">
-                    {p.last_name}, {p.first_name}{p.middle_name ? ` ${p.middle_name}` : ''}{p.suffix ? ` ${p.suffix}` : ''}
-                  </td>
-                  <td className="px-5 py-3 text-gray-500">{p.school_email}</td>
-                  <td className="px-5 py-3 text-gray-500">{p.student_number ?? '—'}</td>
-                  <td className="px-5 py-3">
-                    <Badge variant={p.attended ? 'green' : 'gray'}>
-                      {p.attended ? 'Attended' : 'Absent'}
-                    </Badge>
-                  </td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">
-                    {p.scanned_at
-                      ? new Date(p.scanned_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <RosterTable rows={rows} eventId={params.eventId} />
       )}
     </div>
   )

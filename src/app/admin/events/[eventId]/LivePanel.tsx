@@ -62,28 +62,26 @@ export function LivePanel({ eventId, total, initialAttendances, scannerMap }: Li
     .sort((a, b) => new Date(b.scanned_at).getTime() - new Date(a.scanned_at).getTime())
 
   return (
-    <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div className="mt-4 flex flex-col sm:flex-row gap-4 items-stretch">
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 lg:col-span-1 content-start">
-        {[
-          { label: 'Participants', value: total, color: 'text-gray-900' },
-          { label: 'Attended', value: checkedIn, color: 'text-green-600' },
-        ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
+      {[
+        { label: 'Participants', value: total, color: 'text-gray-900' },
+        { label: 'Attended', value: checkedIn, color: 'text-green-600' },
+      ].map((s) => (
+        <div key={s.label} className="bg-white rounded-xl border border-gray-200 p-4 text-center sm:w-36 shrink-0 flex flex-col items-center justify-center">
+          <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+        </div>
+      ))}
 
-      {/* Recent check-ins — expanded */}
-      <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      {/* Recent check-ins */}
+      <div className="flex-1 bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
         <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
           <h3 className="text-sm font-semibold text-gray-700">Recent check-ins</h3>
           <span className="ml-auto text-xs text-gray-400">{checkedIn} total</span>
         </div>
-        <div className="divide-y divide-gray-100 max-h-72 overflow-auto">
+        <div className="divide-y divide-gray-100 overflow-auto flex-1">
           {recent.length === 0 ? (
             <p className="px-5 py-6 text-sm text-gray-400">No check-ins yet</p>
           ) : (

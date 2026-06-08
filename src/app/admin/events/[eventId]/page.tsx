@@ -62,55 +62,57 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <nav className="text-sm text-gray-400 mb-1">
-            <Link href="/admin/events" className="hover:text-gray-600">Events</Link>
-            <span className="mx-2">/</span>
-            <span className="text-gray-600">{event.name}</span>
-          </nav>
-          <h1 className="text-2xl font-bold text-gray-900">{event.name}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {formatDate(event.event_date)}{event.location && ` · ${event.location}`}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href={`/admin/events/${params.eventId}/upload`}
-            className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-          >
-            Import CSV
-          </Link>
-          <Link
-            href={`/admin/events/${params.eventId}/passes`}
-            className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-          >
-            View passes
-          </Link>
-          <Link
-            href={`/organizer/scan/${params.eventId}`}
-            className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-          >
-            Scan QR
-          </Link>
-          <Link
-            href={`/dashboard/${params.eventId}`}
-            className="text-sm font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-          >
-            Live dashboard
-          </Link>
+      <div className="mb-6">
+        <nav className="text-sm text-gray-400 mb-1">
+          <Link href="/admin/events" className="hover:text-gray-600">Events</Link>
+          <span className="mx-2">/</span>
+          <span className="text-gray-600">{event.name}</span>
+        </nav>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{event.name}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {formatDate(event.event_date)}{event.location && ` · ${event.location}`}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/admin/events/${params.eventId}/upload`}
+              className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              Import CSV
+            </Link>
+            <Link
+              href={`/admin/events/${params.eventId}/passes`}
+              className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              View passes
+            </Link>
+            <Link
+              href={`/organizer/scan/${params.eventId}`}
+              className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              Scan QR
+            </Link>
+            <Link
+              href={`/dashboard/${params.eventId}`}
+              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            >
+              Live dashboard
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-3 mb-6">
         {[
           { label: 'Total on roster', value: total },
           { label: 'Attended', value: attended },
           { label: 'Absent', value: total - attended },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-            <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
+          <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-3 md:p-5">
+            <p className="text-xl md:text-2xl font-bold text-gray-900">{stat.value}</p>
+            <p className="text-xs md:text-sm text-gray-500 mt-0.5">{stat.label}</p>
           </div>
         ))}
       </div>

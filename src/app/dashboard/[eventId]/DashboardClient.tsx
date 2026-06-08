@@ -67,15 +67,15 @@ export function DashboardClient({ event, total, initialAttendances }: DashboardC
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           {[
             { label: 'Total on roster', value: total, color: 'text-gray-900' },
             { label: 'Attended', value: checkedIn, color: 'text-green-600' },
             { label: 'Remaining', value: remaining, color: 'text-orange-500' },
           ].map((stat) => (
-            <div key={stat.label} className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
-              <p className={`text-4xl font-bold ${stat.color}`}>{stat.value}</p>
-              <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+            <div key={stat.label} className="bg-white rounded-2xl border border-gray-200 p-3 md:p-6 text-center">
+              <p className={`text-2xl md:text-4xl font-bold ${stat.color}`}>{stat.value}</p>
+              <p className="text-xs md:text-sm text-gray-500 mt-1">{stat.label}</p>
             </div>
           ))}
         </div>

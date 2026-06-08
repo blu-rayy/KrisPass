@@ -33,18 +33,30 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
     `)
     .eq('event_id', params.eventId)
 
-  const [{ data: attendances }, { data: eventTeams }, { data: participantBlocks }, { data: profiles }] = await Promise.all([
+  const [{ data: attendances }, { data: eventTeams }, { data: participantBlocks }, { data: profiles }, { data: orgProfiles }] = await Promise.all([
     service.from('attendances').select('id, participant_id, scanned_at, scanned_by, participants(last_name, first_name)').eq('event_id', params.eventId).order('scanned_at', { ascending: false }),
     service.from('event_teams').select('participant_id, teams(name)').eq('event_id', params.eventId),
     service.from('participant_blocks').select('participant_id, blocks(code)'),
     service.from('profiles').select('id, first_name, last_name'),
+    service.from('profiles').select('school_email').in('role', ['organizer', 'scanner']),
   ])
+
+  // Build set of organizer participant IDs (shadow participants)
+  const orgEmails = new Set((orgProfiles ?? []).map((p) => p.school_email).filter(Boolean))
+  const rosterParticipants = (roster ?? []).map((r) => r.participants as unknown as { id: string; school_email: string | null } | null)
+  const orgParticipantIds = new Set(
+    rosterParticipants.filter((p) => p && orgEmails.has(p.school_email ?? '')).map((p) => p!.id)
+  )
 
   const attendanceMap = new Map((attendances ?? []).map((a) => [a.participant_id, a.scanned_at]))
   const teamMap = new Map((eventTeams ?? []).map((et) => [et.participant_id, (et.teams as unknown as { name: string } | null)?.name ?? null]))
   const blockMap = new Map((participantBlocks ?? []).map((pb) => [pb.participant_id, (pb.blocks as unknown as { code: string } | null)?.code ?? null]))
 
-  const total = roster?.length ?? 0
+  const total = (roster ?? []).filter((r) => {
+    const p = r.participants as unknown as { id: string } | null
+    return p && !orgParticipantIds.has(p.id)
+  }).length
+  const totalOrganizers = orgParticipantIds.size
 
   const rows = (roster ?? [])
     .map((r) => {
@@ -131,7 +143,14 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
       </div>
 
       {/* Live stats + recent check-ins */}
-      <LivePanel eventId={params.eventId} total={total} initialAttendances={initialAttendances} scannerMap={scannerMap} />
+      <LivePanel
+        eventId={params.eventId}
+        total={total}
+        totalOrganizers={totalOrganizers}
+        initialAttendances={initialAttendances}
+        scannerMap={scannerMap}
+        orgParticipantIds={[...orgParticipantIds]}
+      />
 
       {/* Roster table */}
       <div className="mt-6">

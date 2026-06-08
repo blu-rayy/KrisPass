@@ -5,20 +5,22 @@ import { PassListClient } from './PassListClient'
 
 export default async function PassesPage({ params }: { params: { eventId: string } }) {
   const service = createServiceClient()
-  const { data: event } = await service.from('events').select('name').eq('id', params.eventId).single()
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+
+  const [{ data: event }, { data: roster }, { data: orgProfiles }] = await Promise.all([
+    service.from('events').select('name').eq('id', params.eventId).single(),
+    service.from('event_roster').select(`
+      qr_token,
+      participants (id, last_name, first_name, middle_name, suffix, school_email, student_number)
+    `).eq('event_id', params.eventId),
+    service.from('profiles').select('school_email').in('role', ['organizer', 'scanner']),
+  ])
+
   if (!event) notFound()
 
-  const { data: roster } = await service
-    .from('event_roster')
-    .select(`
-      qr_token,
-      participants (
-        id, last_name, first_name, middle_name, suffix, school_email, student_number
-      )
-    `)
-    .eq('event_id', params.eventId)
+  const orgEmails = new Set((orgProfiles ?? []).map((p) => p.school_email).filter(Boolean))
 
-  const rows = (roster ?? []).map((r) => {
+  const allRows = (roster ?? []).map((r) => {
     const p = r.participants as unknown as Record<string, string | null>
     return {
       id: p.id as string,
@@ -29,10 +31,12 @@ export default async function PassesPage({ params }: { params: { eventId: string
       school_email: p.school_email as string,
       student_number: p.student_number,
       qr_token: r.qr_token,
+      isOrganizer: orgEmails.has(p.school_email ?? ''),
     }
   }).sort((a, b) => a.last_name.localeCompare(b.last_name))
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const participantRows = allRows.filter((r) => !r.isOrganizer)
+  const organizerRows = allRows.filter((r) => r.isOrganizer)
 
   return (
     <div>
@@ -45,7 +49,7 @@ export default async function PassesPage({ params }: { params: { eventId: string
       </nav>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Participant passes</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Passes — {event.name}</h1>
         <a
           href={`/api/participants/${params.eventId}?export=csv`}
           className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
@@ -54,7 +58,23 @@ export default async function PassesPage({ params }: { params: { eventId: string
         </a>
       </div>
 
-      <PassListClient rows={rows} appUrl={appUrl} eventName={event.name} />
+      {/* Participants section */}
+      <div className="mb-8">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-3">
+          Participants <span className="text-gray-400 font-normal normal-case tracking-normal">({participantRows.length})</span>
+        </h2>
+        <PassListClient rows={participantRows} appUrl={appUrl} eventName={event.name} />
+      </div>
+
+      {/* Organizers section */}
+      {organizerRows.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-3">
+            Organizers <span className="text-gray-400 font-normal normal-case tracking-normal">({organizerRows.length})</span>
+          </h2>
+          <PassListClient rows={organizerRows} appUrl={appUrl} eventName={event.name} />
+        </div>
+      )}
     </div>
   )
 }

@@ -3,6 +3,12 @@ import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils'
 import { RosterTable } from './RosterTable'
+import { LivePanel } from './LivePanel'
+import {
+  ArrowUpTrayIcon,
+  TicketIcon,
+  QrCodeIcon,
+} from '@heroicons/react/24/outline'
 
 export default async function EventDetailPage({ params }: { params: { eventId: string } }) {
   const service = createServiceClient()
@@ -28,7 +34,7 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
     .eq('event_id', params.eventId)
 
   const [{ data: attendances }, { data: eventTeams }, { data: participantBlocks }] = await Promise.all([
-    service.from('attendances').select('participant_id, scanned_at').eq('event_id', params.eventId),
+    service.from('attendances').select('id, participant_id, scanned_at, participants(last_name, first_name)').eq('event_id', params.eventId).order('scanned_at', { ascending: false }),
     service.from('event_teams').select('participant_id, teams(name)').eq('event_id', params.eventId),
     service.from('participant_blocks').select('participant_id, blocks(code)'),
   ])
@@ -38,7 +44,6 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
   const blockMap = new Map((participantBlocks ?? []).map((pb) => [pb.participant_id, (pb.blocks as unknown as { code: string } | null)?.code ?? null]))
 
   const total = roster?.length ?? 0
-  const attended = attendances?.length ?? 0
 
   const rows = (roster ?? [])
     .map((r) => {
@@ -66,9 +71,20 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
     })
     .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
 
+  const initialAttendances = (attendances ?? []).map((a) => {
+    const p = a.participants as unknown as { last_name: string; first_name: string } | null
+    return {
+      id: a.id,
+      participant_id: a.participant_id,
+      scanned_at: a.scanned_at,
+      participant_name: p ? `${p.last_name}, ${p.first_name}` : 'Unknown',
+    }
+  })
+
   return (
     <div>
-      <div className="mb-6">
+      {/* Header */}
+      <div className="mb-4">
         <nav className="text-sm text-gray-400 mb-1">
           <Link href="/admin/events" className="hover:text-gray-600">Events</Link>
           <span className="mx-2">/</span>
@@ -84,52 +100,48 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/admin/events/${params.eventId}/upload`}
-              className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
             >
+              <ArrowUpTrayIcon className="w-4 h-4" />
               Import CSV
             </Link>
             <Link
               href={`/admin/events/${params.eventId}/passes`}
-              className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
             >
+              <TicketIcon className="w-4 h-4" />
               View passes
             </Link>
             <Link
               href={`/organizer/scan/${params.eventId}`}
-              className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors"
             >
+              <QrCodeIcon className="w-4 h-4" />
               Scan QR
-            </Link>
-            <Link
-              href={`/dashboard/${params.eventId}`}
-              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors"
-            >
-              Live dashboard
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-3 md:p-5 inline-block">
-          <p className="text-xl md:text-2xl font-bold text-gray-900">{total}</p>
-          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Participants</p>
-        </div>
-      </div>
+      {/* Live stats + recent check-ins */}
+      <LivePanel eventId={params.eventId} total={total} initialAttendances={initialAttendances} />
 
-      {total === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 py-16 text-center text-gray-400">
-          <p className="font-medium">No participants on roster yet</p>
-          <p className="text-sm mt-1">
-            <Link href={`/admin/events/${params.eventId}/upload`} className="text-blue-600 hover:underline">
-              Import a CSV roster
-            </Link>{' '}
-            to add participants.
-          </p>
-        </div>
-      ) : (
-        <RosterTable rows={rows} eventId={params.eventId} />
-      )}
+      {/* Roster table */}
+      <div className="mt-6">
+        {total === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 py-16 text-center text-gray-400">
+            <p className="font-medium">No participants on roster yet</p>
+            <p className="text-sm mt-1">
+              <Link href={`/admin/events/${params.eventId}/upload`} className="text-violet-600 hover:underline">
+                Import a CSV roster
+              </Link>{' '}
+              to add participants.
+            </p>
+          </div>
+        ) : (
+          <RosterTable rows={rows} eventId={params.eventId} />
+        )}
+      </div>
     </div>
   )
 }

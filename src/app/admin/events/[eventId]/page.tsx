@@ -33,10 +33,11 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
     `)
     .eq('event_id', params.eventId)
 
-  const [{ data: attendances }, { data: eventTeams }, { data: participantBlocks }] = await Promise.all([
-    service.from('attendances').select('id, participant_id, scanned_at, participants(last_name, first_name)').eq('event_id', params.eventId).order('scanned_at', { ascending: false }),
+  const [{ data: attendances }, { data: eventTeams }, { data: participantBlocks }, { data: profiles }] = await Promise.all([
+    service.from('attendances').select('id, participant_id, scanned_at, scanned_by, participants(last_name, first_name)').eq('event_id', params.eventId).order('scanned_at', { ascending: false }),
     service.from('event_teams').select('participant_id, teams(name)').eq('event_id', params.eventId),
     service.from('participant_blocks').select('participant_id, blocks(code)'),
+    service.from('profiles').select('id, first_name, last_name'),
   ])
 
   const attendanceMap = new Map((attendances ?? []).map((a) => [a.participant_id, a.scanned_at]))
@@ -71,13 +72,19 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
     })
     .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
 
+  const scannerMap: Record<string, string> = Object.fromEntries(
+    (profiles ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name}`])
+  )
+
   const initialAttendances = (attendances ?? []).map((a) => {
     const p = a.participants as unknown as { last_name: string; first_name: string } | null
     return {
       id: a.id,
       participant_id: a.participant_id,
       scanned_at: a.scanned_at,
+      scanned_by: a.scanned_by as string | null,
       participant_name: p ? `${p.last_name}, ${p.first_name}` : 'Unknown',
+      scanner_name: a.scanned_by ? (scannerMap[a.scanned_by] ?? null) : null,
     }
   })
 
@@ -124,7 +131,7 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
       </div>
 
       {/* Live stats + recent check-ins */}
-      <LivePanel eventId={params.eventId} total={total} initialAttendances={initialAttendances} />
+      <LivePanel eventId={params.eventId} total={total} initialAttendances={initialAttendances} scannerMap={scannerMap} />
 
       {/* Roster table */}
       <div className="mt-6">

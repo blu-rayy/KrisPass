@@ -49,8 +49,7 @@ export default async function EventsPage() {
               <tr>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Event</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Date</th>
-                <th className="text-right px-5 py-3 font-medium text-gray-600">Roster</th>
-                <th className="text-right px-5 py-3 font-medium text-gray-600">Attended</th>
+                <th className="text-right px-5 py-3 font-medium text-gray-600">Participants</th>
                 <th className="px-5 py-3" />
               </tr>
             </thead>
@@ -67,14 +66,6 @@ export default async function EventsPage() {
                   </td>
                   <td className="px-5 py-3 text-gray-600">{formatDateShort(event.event_date)}</td>
                   <td className="px-5 py-3 text-right text-gray-700">{event.roster_count}</td>
-                  <td className="px-5 py-3 text-right">
-                    <span className="text-gray-700">{event.attendance_count}</span>
-                    {event.roster_count > 0 && (
-                      <span className="text-gray-400 ml-1">
-                        ({Math.round((event.attendance_count / event.roster_count) * 100)}%)
-                      </span>
-                    )}
-                  </td>
                   <td className="px-5 py-3 text-right">
                     <Link
                       href={`/dashboard/${event.id}`}

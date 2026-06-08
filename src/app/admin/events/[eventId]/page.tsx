@@ -110,17 +110,11 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {[
-          { label: 'Total on roster', value: total },
-          { label: 'Attended', value: attended },
-          { label: 'Absent', value: total - attended },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-3 md:p-5">
-            <p className="text-xl md:text-2xl font-bold text-gray-900">{stat.value}</p>
-            <p className="text-xs md:text-sm text-gray-500 mt-0.5">{stat.label}</p>
-          </div>
-        ))}
+      <div className="mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-3 md:p-5 inline-block">
+          <p className="text-xl md:text-2xl font-bold text-gray-900">{total}</p>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Participants</p>
+        </div>
       </div>
 
       {total === 0 ? (

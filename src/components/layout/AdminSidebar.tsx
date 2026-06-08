@@ -8,12 +8,14 @@ import {
   CalendarDaysIcon,
   QrCodeIcon,
   UsersIcon,
+  IdentificationIcon,
   ArrowRightStartOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 
 const navItems = [
   { href: '/admin/events', label: 'Events', icon: CalendarDaysIcon },
   { href: '/organizer', label: 'Scanner', icon: QrCodeIcon },
+  { href: '/admin/organizers', label: 'Organizers', icon: IdentificationIcon },
   { href: '/admin/users', label: 'Users', icon: UsersIcon },
 ]
 

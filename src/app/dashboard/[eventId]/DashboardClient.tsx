@@ -76,9 +76,6 @@ export function DashboardClient({ event, total, initialAttendances }: DashboardC
             <div key={stat.label} className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
               <p className={`text-4xl font-bold ${stat.color}`}>{stat.value}</p>
               <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
-              {stat.label === 'Attended' && total > 0 && (
-                <p className="text-xs text-gray-400 mt-0.5">{Math.round((checkedIn / total) * 100)}%</p>
-              )}
             </div>
           ))}
         </div>

@@ -36,23 +36,29 @@ create table profiles (
 
 alter table profiles enable row level security;
 
+-- Helper to avoid recursive RLS on profiles
+create or replace function is_admin()
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select exists (
+    select 1 from profiles where id = auth.uid() and role = 'admin'
+  )
+$$;
+
 create policy "users can read own profile"
   on profiles for select using (auth.uid() = id);
 
 create policy "admins can read all profiles"
-  on profiles for select using (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  on profiles for select using (is_admin());
 
 create policy "admins can insert profiles"
-  on profiles for insert with check (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  on profiles for insert with check (is_admin());
 
 create policy "admins can update profiles"
-  on profiles for update using (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  on profiles for update using (is_admin());
 
 -- ── Participants (data-only, no auth) ───────────────────────
 create table participants (

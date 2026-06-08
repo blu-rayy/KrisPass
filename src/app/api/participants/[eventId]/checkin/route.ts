@@ -36,12 +36,14 @@ export async function POST(request: Request, { params }: { params: { eventId: st
     .maybeSingle()
 
   if (existing) {
+    // Second scan = participant timed out (left), remove their attendance
+    await service.from('attendances').delete().eq('id', existing.id)
     const { data: participant } = await service
       .from('participants')
       .select('*')
       .eq('id', participant_id)
       .single()
-    return NextResponse.json({ result: 'duplicate', participant }, { status: 409 })
+    return NextResponse.json({ result: 'timeout', participant })
   }
 
   // Insert attendance record
@@ -52,14 +54,10 @@ export async function POST(request: Request, { params }: { params: { eventId: st
   })
 
   if (insertError) {
-    // Unique constraint violation = race condition duplicate
     if (insertError.code === '23505') {
-      const { data: participant } = await service
-        .from('participants')
-        .select('*')
-        .eq('id', participant_id)
-        .single()
-      return NextResponse.json({ result: 'duplicate', participant }, { status: 409 })
+      await service.from('attendances').delete().eq('event_id', params.eventId).eq('participant_id', participant_id)
+      const { data: participant } = await service.from('participants').select('*').eq('id', participant_id).single()
+      return NextResponse.json({ result: 'timeout', participant })
     }
     return NextResponse.json({ error: insertError.message }, { status: 500 })
   }

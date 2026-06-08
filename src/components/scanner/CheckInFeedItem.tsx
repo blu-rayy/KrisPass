@@ -8,7 +8,7 @@ interface CheckInFeedItemProps {
 
 const resultConfig = {
   success: { label: 'Attended', variant: 'green' as const },
-  duplicate: { label: 'Already in', variant: 'yellow' as const },
+  timeout: { label: 'Timed out', variant: 'yellow' as const },
   not_found: { label: 'Not found', variant: 'red' as const },
 }
 

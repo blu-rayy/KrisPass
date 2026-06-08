@@ -41,7 +41,7 @@ export default function ScanPage({ params }: { params: { eventId: string } }) {
 
   const resultColors = {
     success: 'bg-green-50 border-green-300 text-green-800',
-    duplicate: 'bg-yellow-50 border-yellow-300 text-yellow-800',
+    timeout: 'bg-yellow-50 border-yellow-300 text-yellow-800',
     not_found: 'bg-red-50 border-red-300 text-red-800',
   }
 
@@ -51,7 +51,7 @@ export default function ScanPage({ params }: { params: { eventId: string } }) {
 
   const resultMessages = {
     success: `✓ Attended — ${pName}`,
-    duplicate: `Already recorded — ${pName}`,
+    timeout: `Timed out — ${pName}`,
     not_found: 'QR code not recognized',
   }
 

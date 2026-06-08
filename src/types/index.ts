@@ -72,7 +72,7 @@ export interface Attendance {
   scanned_by: string | null
 }
 
-export type ScanResult = 'success' | 'duplicate' | 'not_found'
+export type ScanResult = 'success' | 'timeout' | 'not_found'
 
 export interface CheckInResponse {
   result: ScanResult

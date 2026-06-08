@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import QRCode from 'react-qr-code'
 import { useState } from 'react'
 
 interface PassRow {
@@ -9,15 +11,17 @@ interface PassRow {
   middle_name: string | null
   suffix: string | null
   school_email: string
+  student_number: string | null
   qr_token: string
 }
 
 interface PassListClientProps {
   rows: PassRow[]
   appUrl: string
+  eventName: string
 }
 
-export function PassListClient({ rows, appUrl }: PassListClientProps) {
+export function PassListClient({ rows, appUrl, eventName }: PassListClientProps) {
   const [copied, setCopied] = useState<string | null>(null)
 
   async function copyLink(token: string) {
@@ -35,47 +39,58 @@ export function PassListClient({ rows, appUrl }: PassListClientProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th className="text-left px-5 py-3 font-medium text-gray-600">Name</th>
-            <th className="text-left px-5 py-3 font-medium text-gray-600">School email</th>
-            <th className="text-left px-5 py-3 font-medium text-gray-600">Pass link</th>
-            <th className="px-5 py-3" />
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {rows.map((p) => {
-            const passUrl = `${appUrl}/pass/${p.qr_token}`
-            const fullName = `${p.last_name}, ${p.first_name}${p.middle_name ? ` ${p.middle_name}` : ''}${p.suffix ? ` ${p.suffix}` : ''}`
-            return (
-              <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-5 py-3 font-medium text-gray-900">{fullName}</td>
-                <td className="px-5 py-3 text-gray-500">{p.school_email}</td>
-                <td className="px-5 py-3">
-                  <a
-                    href={passUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline text-xs font-mono"
-                  >
-                    /pass/{p.qr_token.slice(0, 8)}…
-                  </a>
-                </td>
-                <td className="px-5 py-3 text-right">
-                  <button
-                    onClick={() => copyLink(p.qr_token)}
-                    className="text-xs text-gray-500 hover:text-gray-900 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 transition-colors"
-                  >
-                    {copied === p.qr_token ? 'Copied!' : 'Copy'}
-                  </button>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {rows.map((p) => {
+        const passUrl = `${appUrl}/pass/${p.qr_token}`
+        const fullName = `${p.first_name}${p.middle_name ? ` ${p.middle_name}` : ''} ${p.last_name}`
+
+        return (
+          <div key={p.id} className="group flex flex-col rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+            {/* Mini ticket header */}
+            <div className="bg-gradient-to-br from-violet-700 to-violet-900 px-3 py-2.5">
+              <p className="text-violet-300 text-[8px] uppercase tracking-widest font-semibold truncate">FEU Tech ACM</p>
+              <p className="text-white text-xs font-bold truncate mt-0.5">{eventName}</p>
+            </div>
+
+            {/* Tear line */}
+            <div className="bg-gray-100 flex items-center relative h-3">
+              <div className="absolute -left-2 w-4 h-4 rounded-full bg-white border border-gray-200" />
+              <div className="flex-1 border-t border-dashed border-gray-300 mx-2" />
+              <div className="absolute -right-2 w-4 h-4 rounded-full bg-white border border-gray-200" />
+            </div>
+
+            {/* QR + info */}
+            <div className="bg-gray-50 px-3 pb-3 flex flex-col items-center gap-2 flex-1">
+              <div className="bg-white p-2 rounded-xl shadow-sm mt-1">
+                <QRCode value={p.qr_token} size={80} />
+              </div>
+              <div className="text-center">
+                <p className="text-gray-900 text-xs font-bold leading-tight">{fullName}</p>
+                {p.student_number && (
+                  <p className="text-gray-400 text-[9px] mt-0.5">{p.student_number}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="border-t border-gray-100 flex divide-x divide-gray-100">
+              <Link
+                href={passUrl}
+                target="_blank"
+                className="flex-1 text-center text-[10px] text-violet-600 font-medium py-2 hover:bg-violet-50 transition-colors"
+              >
+                View
+              </Link>
+              <button
+                onClick={() => copyLink(p.qr_token)}
+                className="flex-1 text-center text-[10px] text-gray-500 font-medium py-2 hover:bg-gray-50 transition-colors"
+              >
+                {copied === p.qr_token ? '✓ Copied' : 'Copy link'}
+              </button>
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

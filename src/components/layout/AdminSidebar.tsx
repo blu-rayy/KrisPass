@@ -33,7 +33,7 @@ export function AdminSidebar() {
           className={cn(
             'flex items-center px-3 py-2 text-sm rounded-lg transition-colors',
             pathname.startsWith(item.href)
-              ? 'bg-blue-50 text-blue-700 font-medium'
+              ? 'bg-violet-50 text-violet-700 font-medium'
               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
           )}
         >

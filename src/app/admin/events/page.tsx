@@ -31,7 +31,7 @@ export default async function EventsPage() {
         <h1 className="text-2xl font-bold text-gray-900">Events</h1>
         <Link
           href="/admin/events/new"
-          className="bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors"
         >
           New event
         </Link>
@@ -78,7 +78,7 @@ export default async function EventsPage() {
                   <td className="px-5 py-3 text-right">
                     <Link
                       href={`/dashboard/${event.id}`}
-                      className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                      className="text-violet-600 hover:text-violet-800 text-xs font-medium"
                     >
                       Dashboard →
                     </Link>

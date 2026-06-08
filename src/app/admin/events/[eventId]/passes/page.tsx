@@ -13,7 +13,7 @@ export default async function PassesPage({ params }: { params: { eventId: string
     .select(`
       qr_token,
       participants (
-        id, last_name, first_name, middle_name, suffix, school_email
+        id, last_name, first_name, middle_name, suffix, school_email, student_number
       )
     `)
     .eq('event_id', params.eventId)
@@ -27,6 +27,7 @@ export default async function PassesPage({ params }: { params: { eventId: string
       middle_name: p.middle_name,
       suffix: p.suffix,
       school_email: p.school_email as string,
+      student_number: p.student_number,
       qr_token: r.qr_token,
     }
   }).sort((a, b) => a.last_name.localeCompare(b.last_name))
@@ -53,7 +54,7 @@ export default async function PassesPage({ params }: { params: { eventId: string
         </a>
       </div>
 
-      <PassListClient rows={rows} appUrl={appUrl} />
+      <PassListClient rows={rows} appUrl={appUrl} eventName={event.name} />
     </div>
   )
 }

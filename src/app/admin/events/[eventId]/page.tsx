@@ -21,19 +21,21 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
       qr_token,
       participant_id,
       participants (
-        id, last_name, first_name, middle_name, suffix, school_email, student_number
+        id, last_name, first_name, middle_name, suffix,
+        school_email, student_number, degree_program
       )
     `)
     .eq('event_id', params.eventId)
 
-  const { data: attendances } = await service
-    .from('attendances')
-    .select('participant_id, scanned_at')
-    .eq('event_id', params.eventId)
+  const [{ data: attendances }, { data: eventTeams }, { data: participantBlocks }] = await Promise.all([
+    service.from('attendances').select('participant_id, scanned_at').eq('event_id', params.eventId),
+    service.from('event_teams').select('participant_id, teams(name)').eq('event_id', params.eventId),
+    service.from('participant_blocks').select('participant_id, blocks(code)'),
+  ])
 
-  const attendanceMap = new Map(
-    (attendances ?? []).map((a) => [a.participant_id, a.scanned_at])
-  )
+  const attendanceMap = new Map((attendances ?? []).map((a) => [a.participant_id, a.scanned_at]))
+  const teamMap = new Map((eventTeams ?? []).map((et) => [et.participant_id, (et.teams as unknown as { name: string } | null)?.name ?? null]))
+  const blockMap = new Map((participantBlocks ?? []).map((pb) => [pb.participant_id, (pb.blocks as unknown as { code: string } | null)?.code ?? null]))
 
   const total = roster?.length ?? 0
   const attended = attendances?.length ?? 0
@@ -44,6 +46,7 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
         id: string; last_name: string | null; first_name: string | null
         middle_name: string | null; suffix: string | null
         school_email: string | null; student_number: string | null
+        degree_program: string | null
       }
       return {
         id: p.id,
@@ -53,6 +56,9 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
         suffix: p.suffix,
         school_email: p.school_email,
         student_number: p.student_number,
+        degree_program: p.degree_program,
+        block: blockMap.get(p.id) ?? null,
+        team_name: teamMap.get(p.id) ?? null,
         qr_token: r.qr_token,
         attended: attendanceMap.has(p.id),
         scanned_at: attendanceMap.get(p.id) ?? null,
@@ -96,7 +102,7 @@ export default async function EventDetailPage({ params }: { params: { eventId: s
             </Link>
             <Link
               href={`/dashboard/${params.eventId}`}
-              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors"
             >
               Live dashboard
             </Link>

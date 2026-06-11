@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PUBLIC_PATHS = ['/login', '/test-qr']
+const AUTH_PATHS = ['/auth/change-password']
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -23,7 +26,27 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+  const pathname = request.nextUrl.pathname
+
+  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p))
+  const isAuthPath = AUTH_PATHS.some((p) => pathname.startsWith(p))
+
+  // Unauthenticated: redirect to login (except public pages)
+  if (!user && !isPublic) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // Authenticated on login: redirect to events
+  if (user && pathname.startsWith('/login')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/events'
+    return NextResponse.redirect(url)
+  }
+
+  // must_change_password check deferred to Phase 2 (needs profile fetch)
 
   return supabaseResponse
 }

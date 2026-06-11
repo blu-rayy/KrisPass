@@ -2,7 +2,6 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_PATHS = ['/login', '/test-qr']
-const AUTH_PATHS = ['/auth/change-password']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -30,7 +29,6 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p))
-  const isAuthPath = AUTH_PATHS.some((p) => pathname.startsWith(p))
 
   // Unauthenticated: redirect to login (except public pages)
   if (!user && !isPublic) {
@@ -46,7 +44,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // must_change_password check deferred to Phase 2 (needs profile fetch)
+  // must_change_password is enforced in (dashboard)/layout.tsx per-request.
+  // Redirect already-changed-password users away from /auth/change-password.
+  if (user && pathname.startsWith('/auth/change-password')) {
+    return supabaseResponse // allow through; layout handles the gate
+  }
 
   return supabaseResponse
 }

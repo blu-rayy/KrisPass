@@ -2,11 +2,12 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
-  Pencil, MapPin, Upload, QrCode, Ticket, Radio,
+  Pencil, MapPin, Upload, Ticket, Radio,
   Download, CheckCircle2, Clock, Users, UserCheck,
 } from 'lucide-react'
 import { SessionManager } from './SessionManager'
 import { StaffManager } from './StaffManager'
+import { ScanQrButton } from './ScanQrButton'
 import { formatDateTime } from '@/lib/utils'
 
 // ── types ─────────────────────────────────────────────────────────────────
@@ -138,8 +139,6 @@ export default async function EventDetailPage({ params }: Props) {
     .filter((r) => r.participants?.participant_type === 'officer')
     .sort((a, b) => (a.participants?.last_name ?? '').localeCompare(b.participants?.last_name ?? ''))
 
-  const firstSession = event.event_sessions[0]
-
   // ── render ──────────────────────────────────────────────────────────────
 
   return (
@@ -206,17 +205,7 @@ export default async function EventDetailPage({ params }: Props) {
         >
           <Download size={14} /> Export Attendance
         </a>
-        <Link
-          href={firstSession ? `/events/${id}/sessions/${firstSession.id}/scan` : '#'}
-          className={`inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-all ${
-            firstSession
-              ? 'text-gray-700 hover:border-violet-300 hover:text-violet-700'
-              : 'text-gray-300 cursor-not-allowed'
-          }`}
-          title={!firstSession ? 'Add a session first' : undefined}
-        >
-          <QrCode size={14} /> Scan QR
-        </Link>
+        <ScanQrButton eventId={id} sessions={event.event_sessions} />
         <Link
           href={`/events/${id}/live`}
           className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-violet-300 hover:text-violet-700 transition-all"

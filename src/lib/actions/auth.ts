@@ -21,7 +21,7 @@ export async function login(
     .select('must_change_password')
     .single()
 
-  if (profile?.must_change_password) redirect('/auth/change-password')
+  if (profile?.must_change_password) redirect('/change-password')
   redirect('/events')
 }
 

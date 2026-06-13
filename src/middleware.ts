@@ -44,12 +44,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // must_change_password is enforced in (dashboard)/layout.tsx per-request.
-  // Redirect already-changed-password users away from /auth/change-password.
-  if (user && pathname.startsWith('/auth/change-password')) {
-    return supabaseResponse // allow through; layout handles the gate
-  }
-
   return supabaseResponse
 }
 

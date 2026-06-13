@@ -16,7 +16,7 @@ export function MobileNav() {
   const pathname = usePathname()
 
   const isActive = (href: string) =>
-    href === '/events' ? pathname.startsWith('/events') : pathname === href
+    pathname === href || pathname.startsWith(`${href}/`)
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 bg-gray-900 border-t border-gray-800 z-50">

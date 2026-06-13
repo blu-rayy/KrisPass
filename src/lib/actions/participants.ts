@@ -2,6 +2,7 @@
 
 import Papa from 'papaparse'
 import { nanoid } from 'nanoid'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { ActionResult, ImportResult, ParticipantType } from '@/types'
@@ -151,4 +152,91 @@ export async function importParticipants(
   }
 
   return { ok: true, data: result }
+}
+
+// ── Single-participant CRUD ────────────────────────────────────────────────
+
+function parseParticipantForm(formData: FormData) {
+  const rawType = (formData.get('participant_type') as string).trim().toLowerCase()
+  const rawBlocks = (formData.get('blocks') as string).trim()
+  return {
+    participant_type: (rawType === 'officer' ? 'officer' : 'attendee') as ParticipantType,
+    last_name: (formData.get('last_name') as string).trim(),
+    first_name: (formData.get('first_name') as string).trim(),
+    middle_name: (formData.get('middle_name') as string).trim() || null,
+    suffix: (formData.get('suffix') as string).trim() || null,
+    school_email: (formData.get('school_email') as string).trim().toLowerCase(),
+    personal_email: (formData.get('personal_email') as string).trim().toLowerCase(),
+    contact_no: (formData.get('contact_no') as string).trim() || null,
+    school: (formData.get('school') as string).trim() || null,
+    student_number: (formData.get('student_number') as string).trim(),
+    degree_program: (formData.get('degree_program') as string).trim() || null,
+    blocks: rawBlocks
+      ? rawBlocks.split(',').map((b) => b.trim()).filter(Boolean)
+      : [],
+  }
+}
+
+export async function createParticipant(
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, error: 'Unauthorized.' }
+
+  const data = parseParticipantForm(formData)
+  if (!data.last_name) return { ok: false, error: 'Last name is required.' }
+  if (!data.first_name) return { ok: false, error: 'First name is required.' }
+  if (!data.school_email) return { ok: false, error: 'School email is required.' }
+  if (!data.personal_email) return { ok: false, error: 'Personal email is required.' }
+  if (!data.student_number) return { ok: false, error: 'Student number is required.' }
+
+  const admin = createAdminClient()
+  const { data: inserted, error } = await admin
+    .from('participants')
+    .insert(data)
+    .select('id')
+    .single()
+
+  if (error) return { ok: false, error: error.message }
+  redirect(`/participants/${inserted.id}/edit`)
+}
+
+export async function updateParticipant(
+  id: string,
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, error: 'Unauthorized.' }
+
+  const data = parseParticipantForm(formData)
+  if (!data.last_name) return { ok: false, error: 'Last name is required.' }
+  if (!data.first_name) return { ok: false, error: 'First name is required.' }
+  if (!data.school_email) return { ok: false, error: 'School email is required.' }
+  if (!data.personal_email) return { ok: false, error: 'Personal email is required.' }
+  if (!data.student_number) return { ok: false, error: 'Student number is required.' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('participants')
+    .update(data)
+    .eq('id', id)
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true, data: undefined }
+}
+
+export async function deleteParticipant(
+  id: string,
+  _prev: ActionResult | null,
+  _formData: FormData
+): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, error: 'Unauthorized.' }
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('participants').delete().eq('id', id)
+  if (error) return { ok: false, error: error.message }
+  redirect('/participants')
 }

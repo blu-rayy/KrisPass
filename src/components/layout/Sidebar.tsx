@@ -28,7 +28,7 @@ export function Sidebar({ profile }: SidebarProps) {
   const pathname = usePathname()
 
   const isActive = (href: string) =>
-    href === '/events' ? pathname.startsWith('/events') : pathname === href
+    pathname === href || pathname.startsWith(`${href}/`)
 
   return (
     <aside className="hidden md:flex w-56 shrink-0 flex-col bg-gray-900 text-white h-screen sticky top-0">
@@ -61,7 +61,7 @@ export function Sidebar({ profile }: SidebarProps) {
             href="/users"
             className={cn(
               'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
-              pathname.startsWith('/users')
+              isActive('/users')
                 ? 'bg-violet-600 text-white'
                 : 'text-gray-400 hover:bg-gray-800 hover:text-white'
             )}

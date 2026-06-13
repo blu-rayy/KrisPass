@@ -34,7 +34,6 @@ type EventDetail = {
   created_by: string | null
   created_at: string
   event_sessions: Session[]
-  event_staff: StaffMember[]
 }
 
 type RosterEntry = {
@@ -77,19 +76,26 @@ export default async function EventDetailPage({ params }: Props) {
     .from('profiles').select('role').eq('id', user.id).single()
   const isAdmin = currentProfile?.role === 'admin'
 
-  // Core event data
+  // Core event data — keep this query simple (no nested staff→profiles join)
+  // to avoid intermittent PostgREST errors that would trigger a false 404
   const { data: event } = await supabase
     .from('events')
     .select(`
       id, name, description, location, created_by, created_at,
-      event_sessions ( id, name, starts_at, ends_at, created_at ),
-      event_staff ( profile_id, assigned_at, profiles ( id, full_name, role, committee ) )
+      event_sessions ( id, name, starts_at, ends_at, created_at )
     `)
     .eq('id', id)
     .order('starts_at', { referencedTable: 'event_sessions', ascending: true })
     .single<EventDetail>()
 
   if (!event) notFound()
+
+  // Staff query separate so a failure here degrades to empty list, not 404
+  const { data: eventStaff } = await supabase
+    .from('event_staff')
+    .select('profile_id, assigned_at, profiles ( id, full_name, role, committee )')
+    .eq('event_id', id)
+    .returns<StaffMember[]>()
 
   const sessionIds = event.event_sessions.map((s) => s.id)
 
@@ -171,7 +177,7 @@ export default async function EventDetailPage({ params }: Props) {
           { label: 'Attendees', value: attendees.length, icon: Users, color: 'text-blue-600' },
           { label: 'Officers', value: officers.length, icon: Users, color: 'text-violet-600' },
           { label: 'Checked In', value: checkedInIds.size, icon: UserCheck, color: 'text-green-600' },
-          { label: 'Organizers', value: event.event_staff.length, icon: Users, color: 'text-gray-600' },
+          { label: 'Organizers', value: (eventStaff ?? []).length, icon: Users, color: 'text-gray-600' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1">
@@ -289,7 +295,7 @@ export default async function EventDetailPage({ params }: Props) {
       {/* ── Staff ── */}
       <StaffManager
         eventId={id}
-        staff={event.event_staff}
+        staff={eventStaff ?? []}
         allProfiles={allProfiles}
         isAdmin={isAdmin}
       />

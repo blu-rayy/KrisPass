@@ -29,6 +29,15 @@ export async function GET(
     return csvResponse(csv, event.name)
   }
 
+  type AttendanceRow = {
+    id: string
+    event_session_id: string
+    scanned_at: string
+    scanned_by: string | null
+    participants: { first_name: string; last_name: string; student_number: string; school_email: string; participant_type: string } | null
+    profiles: { full_name: string } | null
+  }
+
   // Fetch all attendances with participant and scanned-by info
   const { data: attendances } = await supabase
     .from('attendances')
@@ -39,13 +48,14 @@ export async function GET(
     `)
     .in('event_session_id', sessionIds)
     .order('scanned_at', { ascending: true })
+    .returns<AttendanceRow[]>()
 
   if (!attendances || attendances.length === 0) {
     const csv = Papa.unparse([{ message: 'No attendance records for this event.' }])
     return csvResponse(csv, event.name)
   }
 
-  const rows = attendances.map((a: any) => ({
+  const rows = attendances.map((a) => ({
     last_name: a.participants?.last_name ?? '',
     first_name: a.participants?.first_name ?? '',
     student_number: a.participants?.student_number ?? '',

@@ -97,7 +97,7 @@ export function EditEventForm({ event, isAdmin }: Props) {
           ) : (
             <div className="space-y-3">
               <p className="text-sm font-medium text-red-700">
-                Are you sure? This will permanently delete "{event.name}" and all its data.
+                Are you sure? This will permanently delete &ldquo;{event.name}&rdquo; and all its data.
               </p>
               <div className="flex gap-2">
                 <form action={deleteAction}>

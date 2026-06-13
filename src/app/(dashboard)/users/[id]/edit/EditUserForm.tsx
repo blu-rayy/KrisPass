@@ -178,7 +178,7 @@ export function EditUserForm({ profile, currentUserId }: Props) {
           ) : (
             <div className="space-y-3">
               <p className="text-sm font-medium text-red-700">
-                Are you sure? This will permanently delete {profile.full_name}'s account.
+                Are you sure? This will permanently delete {profile.full_name}&apos;s account.
               </p>
               <div className="flex gap-2">
                 <form action={deleteAction}>

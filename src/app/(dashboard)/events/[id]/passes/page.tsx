@@ -73,13 +73,13 @@ export default async function PassesPage({ params, searchParams }: Props) {
         >
           <ArrowLeft size={13} /> {event.name}
         </Link>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-gray-900">QR Passes</h1>
             {dateRange && <p className="text-sm text-gray-500 mt-0.5">{dateRange}</p>}
           </div>
           {/* Bulk actions */}
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div className="flex items-center gap-2 flex-wrap justify-end shrink-0">
             <a
               href={`/events/${id}/passes/zip?type=${activeTab}`}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-violet-300 hover:text-violet-700 transition-all"
@@ -138,23 +138,65 @@ export default async function PassesPage({ params, searchParams }: Props) {
                 key={participant_id}
                 className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm flex flex-col gap-3"
               >
-                {/* Pass preview placeholder */}
-                <div className="w-full aspect-[9/16] bg-slate-900 rounded-lg flex flex-col items-center justify-center gap-2 overflow-hidden">
-                  <span className="text-[9px] font-bold tracking-widest text-violet-400">KRISPASS</span>
-                  <div className="w-12 h-12 bg-white rounded p-1">
-                    <div className="w-full h-full bg-slate-900 rounded-sm grid grid-cols-3 gap-0.5">
-                      {Array.from({ length: 9 }).map((_, i) => (
-                        <div key={i} className={`rounded-sm ${[0,2,6,8,4].includes(i) ? 'bg-white' : ''}`} />
+                {/* Pass preview */}
+                <div className="w-full aspect-[9/16] bg-[#0f172a] rounded-lg flex flex-col items-center overflow-hidden px-2 pt-3 pb-2 gap-1.5">
+                  {/* Wordmark + badge */}
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[7px] font-bold tracking-[0.2em] text-violet-400">KRISPASS</span>
+                    <span
+                      className={`text-[6px] font-bold tracking-widest px-1.5 py-0.5 rounded-full border ${
+                        p.participant_type === 'officer'
+                          ? 'text-violet-300 bg-violet-900/30 border-violet-700/40'
+                          : 'text-blue-300 bg-blue-900/30 border-blue-700/40'
+                      }`}
+                    >
+                      {p.participant_type === 'officer' ? 'OFFICER' : 'ATTENDEE'}
+                    </span>
+                  </div>
+
+                  <div className="flex-1" />
+
+                  {/* QR placeholder */}
+                  <div className="bg-white rounded p-1 w-10 h-10 flex items-center justify-center shrink-0">
+                    <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-px">
+                      {[1,1,1,1,1, 1,0,0,0,1, 1,0,1,0,1, 1,0,0,0,1, 1,1,1,1,1].map((v, i) => (
+                        <div key={i} className={`${v ? 'bg-[#1e1b4b]' : 'bg-white'}`} />
                       ))}
                     </div>
                   </div>
-                  <div className="text-center px-2">
-                    <p className="text-white text-[10px] font-bold tracking-wide">{p.last_name.toUpperCase()}</p>
-                    <p className="text-slate-400 text-[9px]">{p.first_name}</p>
+
+                  <div className="flex-1" />
+
+                  {/* Name */}
+                  <div className="text-center w-full px-1">
+                    <p className="text-white text-[9px] font-bold tracking-wide truncate">{p.last_name.toUpperCase()}</p>
+                    <p className="text-slate-400 text-[8px] truncate">{p.first_name}</p>
                   </div>
-                  {team && (
-                    <span className="text-[9px] text-violet-300 bg-violet-950 px-2 py-0.5 rounded-full">{team}</span>
+
+                  {/* Student number */}
+                  <p className="text-[7px] text-slate-500 font-mono tracking-widest">{p.student_number}</p>
+
+                  {/* Team + blocks */}
+                  {(team || p.blocks.length > 0) && (
+                    <div className="flex flex-wrap justify-center gap-0.5 px-1">
+                      {team && (
+                        <span className="text-[6px] font-bold text-white bg-violet-700 px-1.5 py-0.5 rounded-full">
+                          {team}
+                        </span>
+                      )}
+                      {p.blocks.slice(0, 2).map((b) => (
+                        <span key={b} className="text-[6px] text-slate-400 bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded-full">
+                          {b}
+                        </span>
+                      ))}
+                    </div>
                   )}
+
+                  {/* Footer */}
+                  <div className="w-full border-t border-slate-700/60 pt-1 mt-0.5">
+                    <p className="text-[7px] text-slate-400 text-center truncate">{event.name}</p>
+                    {dateRange && <p className="text-[6px] text-slate-600 text-center">{dateRange}</p>}
+                  </div>
                 </div>
 
                 {/* Info */}

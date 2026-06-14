@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Sun, Moon, Radio, Users, UserCheck, UserX } from 'lucide-react'
+import { ArrowLeft, Sun, Moon, Radio, Users, UserCheck, UserX, Download } from 'lucide-react'
 import type { RealtimePostgresInsertPayload } from '@supabase/supabase-js'
 
 // ── types ─────────────────────────────────────────────────────────────────────
@@ -215,6 +215,14 @@ export function LiveDashboard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={`/events/${event.id}/export`}
+            className={`p-1.5 rounded-lg border transition-colors ${controlBg}`}
+            title="Export attendance CSV"
+          >
+            <Download size={16} />
+          </a>
+
           {sessions.length > 1 && (
             <select
               value={selectedSessionId ?? ''}
@@ -260,12 +268,12 @@ export function LiveDashboard({
             { label: 'Absent', value: absent, icon: UserX, color: 'text-red-400' },
             { label: 'Total', value: rosterCount, icon: Users, color: mutedText },
           ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className={`rounded-2xl border ${cardBg} px-6 py-5`}>
-              <div className={`flex items-center gap-2 mb-2 ${mutedText}`}>
-                <Icon size={16} className={color} />
-                <span className="text-sm font-medium">{label}</span>
+            <div key={label} className={`rounded-2xl border ${cardBg} px-3 py-4 sm:px-6 sm:py-5`}>
+              <div className={`flex items-center gap-1.5 mb-1.5 ${mutedText}`}>
+                <Icon size={14} className={color} />
+                <span className="text-xs sm:text-sm font-medium">{label}</span>
               </div>
-              <p className="text-5xl font-bold tracking-tight">{value}</p>
+              <p className="text-3xl sm:text-5xl font-bold tracking-tight">{value}</p>
             </div>
           ))}
         </div>
@@ -320,7 +328,7 @@ export function LiveDashboard({
             </div>
 
             {attendances.length > 0 ? (
-              <div className={`divide-y ${divideColor} max-h-[calc(100vh-22rem)] overflow-y-auto`}>
+              <div className={`divide-y ${divideColor} max-h-[calc(100vh-18rem)] sm:max-h-[calc(100vh-22rem)] overflow-y-auto`}>
                 {attendances.map((entry) => (
                   <div
                     key={entry.id}

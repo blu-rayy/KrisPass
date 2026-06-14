@@ -54,27 +54,49 @@ export async function renderPass(data: PassData): Promise<Buffer> {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        backgroundColor: '#0f172a',
+        background: 'linear-gradient(160deg, #0d1528 0%, #0f172a 45%, #100d1f 100%)',
         color: '#f8fafc',
         fontFamily: 'Inter',
-        padding: '80px 60px 60px',
+        padding: '72px 60px 56px',
       }}
     >
+      {/* Top accent line */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 6,
+          background: 'linear-gradient(90deg, #7c3aed, #a78bfa, #7c3aed)',
+          display: 'flex',
+        }}
+      />
+
       {/* Wordmark + type badge */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-        <div style={{ fontSize: 44, fontWeight: 700, letterSpacing: 12, color: '#a78bfa' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+        <div
+          style={{
+            fontSize: 48,
+            fontWeight: 700,
+            letterSpacing: 14,
+            color: '#a78bfa',
+            display: 'flex',
+          }}
+        >
           KRISPASS
         </div>
         <div
           style={{
             fontSize: 18,
             fontWeight: 700,
-            letterSpacing: 4,
+            letterSpacing: 5,
             color: typeColor,
-            backgroundColor: `${typeColor}22`,
-            padding: '6px 20px',
+            backgroundColor: `${typeColor}1a`,
+            padding: '8px 24px',
             borderRadius: 999,
-            border: `1px solid ${typeColor}44`,
+            border: `1.5px solid ${typeColor}55`,
+            display: 'flex',
           }}
         >
           {typeLabel}
@@ -88,56 +110,84 @@ export async function renderPass(data: PassData): Promise<Buffer> {
       <div
         style={{
           display: 'flex',
-          padding: 20,
+          padding: 24,
           backgroundColor: '#ffffff',
-          borderRadius: 20,
+          borderRadius: 24,
+          boxShadow: '0 0 0 1px rgba(167,139,250,0.15), 0 24px 60px rgba(0,0,0,0.5)',
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={qrDataUrl} width={480} height={480} alt="" />
       </div>
 
-      <div style={{ height: 56, display: 'flex' }} />
+      <div style={{ height: 60, display: 'flex' }} />
 
       {/* Name */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
         <div
           style={{
-            fontSize: 64,
+            fontSize: 68,
             fontWeight: 700,
             textAlign: 'center',
-            lineHeight: 1.1,
-            letterSpacing: 2,
+            lineHeight: 1.05,
+            letterSpacing: 3,
+            color: '#f1f5f9',
+            display: 'flex',
           }}
         >
           {data.lastName.toUpperCase()}
         </div>
-        <div style={{ fontSize: 40, fontWeight: 400, color: '#94a3b8', textAlign: 'center' }}>
+        <div
+          style={{
+            fontSize: 42,
+            fontWeight: 400,
+            color: '#94a3b8',
+            textAlign: 'center',
+            display: 'flex',
+          }}
+        >
           {nameMiddle}
         </div>
       </div>
 
-      <div style={{ height: 28, display: 'flex' }} />
+      <div style={{ height: 32, display: 'flex' }} />
 
       {/* Student number */}
-      <div style={{ fontSize: 26, color: '#475569', letterSpacing: 3, fontWeight: 400 }}>
+      <div
+        style={{
+          fontSize: 26,
+          color: '#475569',
+          letterSpacing: 4,
+          fontWeight: 400,
+          display: 'flex',
+        }}
+      >
         {data.studentNumber}
       </div>
 
-      <div style={{ height: 28, display: 'flex' }} />
+      <div style={{ height: 32, display: 'flex' }} />
 
       {/* Team + blocks */}
       {(data.teamName || data.blocks.length > 0) && (
-        <div style={{ display: 'flex', flexDirection: 'row', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 10,
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+          }}
+        >
           {data.teamName && (
             <div
               style={{
                 fontSize: 24,
                 fontWeight: 700,
                 color: '#f8fafc',
-                backgroundColor: '#7c3aed',
-                padding: '10px 22px',
+                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                padding: '12px 26px',
                 borderRadius: 999,
+                display: 'flex',
               }}
             >
               {data.teamName}
@@ -151,9 +201,10 @@ export async function renderPass(data: PassData): Promise<Buffer> {
                 fontWeight: 400,
                 color: '#94a3b8',
                 backgroundColor: '#1e293b',
-                padding: '8px 16px',
+                padding: '10px 18px',
                 borderRadius: 999,
                 border: '1px solid #334155',
+                display: 'flex',
               }}
             >
               {b}
@@ -171,16 +222,31 @@ export async function renderPass(data: PassData): Promise<Buffer> {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 8,
+          gap: 10,
           borderTop: '1px solid #1e293b',
-          paddingTop: 36,
+          paddingTop: 40,
           width: '100%',
         }}
       >
-        <div style={{ fontSize: 30, fontWeight: 700, color: '#e2e8f0', textAlign: 'center' }}>
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: 700,
+            color: '#e2e8f0',
+            textAlign: 'center',
+            display: 'flex',
+          }}
+        >
           {data.eventName}
         </div>
-        <div style={{ fontSize: 22, color: '#475569', textAlign: 'center' }}>
+        <div
+          style={{
+            fontSize: 22,
+            color: '#475569',
+            textAlign: 'center',
+            display: 'flex',
+          }}
+        >
           {data.eventDateRange}
         </div>
       </div>

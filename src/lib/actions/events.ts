@@ -148,6 +148,23 @@ export async function addStaff(
 }
 
 // Direct form action — no useActionState
+export async function removeFromRoster(formData: FormData) {
+  const ctx = await requireAdmin()
+  if (!ctx) return
+
+  const eventId = formData.get('event_id') as string
+  const participantId = formData.get('participant_id') as string
+
+  await ctx.supabase
+    .from('event_roster')
+    .delete()
+    .eq('event_id', eventId)
+    .eq('participant_id', participantId)
+
+  revalidatePath(`/events/${eventId}`)
+}
+
+// Direct form action — no useActionState
 export async function removeStaff(formData: FormData) {
   const ctx = await requireAdmin()
   if (!ctx) return

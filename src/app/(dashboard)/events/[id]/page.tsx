@@ -3,12 +3,13 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
   Pencil, MapPin, Upload, Ticket, Radio,
-  Download, CheckCircle2, Clock, Users, UserCheck,
+  Download, CheckCircle2, Clock, Users, UserCheck, X,
 } from 'lucide-react'
 import { SessionManager } from './SessionManager'
 import { StaffManager } from './StaffManager'
 import { ScanQrButton } from './ScanQrButton'
 import { formatDateTime } from '@/lib/utils'
+import { removeFromRoster } from '@/lib/actions/events'
 
 // ── types ─────────────────────────────────────────────────────────────────
 
@@ -151,9 +152,9 @@ export default async function EventDetailPage({ params }: Props) {
     <div className="px-4 py-6 max-w-5xl mx-auto space-y-6">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-semibold text-gray-900">{event.name}</h1>
+          <h1 className="text-xl font-semibold text-gray-900 break-words">{event.name}</h1>
           {event.location && (
             <p className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
               <MapPin size={13} /> {event.location}
@@ -281,11 +282,15 @@ export default async function EventDetailPage({ params }: Props) {
           title="Attendees"
           rows={attendees}
           checkedInIds={checkedInIds}
+          eventId={id}
+          isAdmin={isAdmin}
         />
         <ParticipantTable
           title="Officers"
           rows={officers}
           checkedInIds={checkedInIds}
+          eventId={id}
+          isAdmin={isAdmin}
         />
       </div>
 
@@ -309,10 +314,14 @@ function ParticipantTable({
   title,
   rows,
   checkedInIds,
+  eventId,
+  isAdmin,
 }: {
   title: string
   rows: { participant_id: string; participants: RosterEntry['participants'] }[]
   checkedInIds: Set<string>
+  eventId: string
+  isAdmin: boolean
 }) {
   const checkedIn = rows.filter((r) => checkedInIds.has(r.participant_id)).length
 
@@ -332,6 +341,7 @@ function ParticipantTable({
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden sm:table-cell">Student No.</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden md:table-cell">Email</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Status</th>
+                {isAdmin && <th className="px-4 py-2.5" />}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -355,6 +365,21 @@ function ParticipantTable({
                       <span className="text-xs text-gray-300">—</span>
                     )}
                   </td>
+                  {isAdmin && (
+                    <td className="px-4 py-2.5">
+                      <form action={removeFromRoster}>
+                        <input type="hidden" name="event_id" value={eventId} />
+                        <input type="hidden" name="participant_id" value={participant_id} />
+                        <button
+                          type="submit"
+                          className="p-1 text-gray-300 hover:text-red-500 transition-colors rounded"
+                          title="Remove from roster"
+                        >
+                          <X size={13} />
+                        </button>
+                      </form>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

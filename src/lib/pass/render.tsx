@@ -12,7 +12,7 @@ export type PassData = {
   studentNumber: string
   blocks: string[]
   teamName?: string | null
-  participantType: 'attendee' | 'officer'
+  participantType: 'attendee' | 'officer' | 'organizer'
   qrToken: string
   eventName: string
   eventDateRange: string
@@ -37,8 +37,12 @@ export async function renderPass(data: PassData): Promise<Buffer> {
   })
 
   const fonts = getFonts()
-  const typeColor = data.participantType === 'officer' ? '#a78bfa' : '#93c5fd'
-  const typeLabel = data.participantType === 'officer' ? 'OFFICER' : 'ATTENDEE'
+  const typeColor = data.participantType === 'officer' ? '#a78bfa'
+    : data.participantType === 'organizer' ? '#fbbf24'
+    : '#93c5fd'
+  const typeLabel = data.participantType === 'officer' ? 'OFFICER'
+    : data.participantType === 'organizer' ? 'ORGANIZER'
+    : 'ATTENDEE'
 
   const nameMiddle = [
     data.firstName,

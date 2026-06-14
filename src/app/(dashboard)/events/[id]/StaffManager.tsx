@@ -1,6 +1,7 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { addStaff, removeStaff } from '@/lib/actions/events'
 import { Button } from '@/components/ui/Button'
 import { UserPlus, X, CheckCircle, Users } from 'lucide-react'
@@ -30,8 +31,13 @@ interface Props {
 }
 
 export function StaffManager({ eventId, staff, allProfiles, isAdmin }: Props) {
+  const router = useRouter()
   const boundAdd = addStaff.bind(null, eventId)
   const [state, addAction, pending] = useActionState(boundAdd, null)
+
+  useEffect(() => {
+    if (state?.ok === true) router.refresh()
+  }, [state, router])
 
   const assignedIds = new Set(staff.map((s) => s.profile_id))
   const available = allProfiles.filter((p) => !assignedIds.has(p.id))

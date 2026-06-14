@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { ActionResult } from '@/types'
 
 async function requireStaff() {
@@ -155,7 +156,30 @@ export async function removeFromRoster(formData: FormData) {
   const eventId = formData.get('event_id') as string
   const participantId = formData.get('participant_id') as string
 
-  await ctx.supabase
+  const admin = createAdminClient()
+
+  // Clean up attendances for this participant across all sessions of this event
+  const { data: sessions } = await admin
+    .from('event_sessions')
+    .select('id')
+    .eq('event_id', eventId)
+
+  const sessionIds = (sessions ?? []).map((s) => s.id as string)
+  if (sessionIds.length > 0) {
+    await admin
+      .from('attendances')
+      .delete()
+      .eq('participant_id', participantId)
+      .in('event_session_id', sessionIds)
+  }
+
+  await admin
+    .from('event_teams')
+    .delete()
+    .eq('event_id', eventId)
+    .eq('participant_id', participantId)
+
+  await admin
     .from('event_roster')
     .delete()
     .eq('event_id', eventId)

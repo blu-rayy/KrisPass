@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <main className="flex-1 overflow-x-hidden pb-16 md:pb-0">
         {children}
       </main>
-      <MobileNav />
+      <MobileNav role={profile.role} />
     </div>
   )
 }

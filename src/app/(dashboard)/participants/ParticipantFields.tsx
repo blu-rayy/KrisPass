@@ -58,6 +58,7 @@ export function ParticipantFields({ defaults }: Props) {
           <Input id="school" name="school" label="School" defaultValue={defaults?.school ?? ''} placeholder="FEU Tech" />
           <Input id="student_number" name="student_number" label="Student number" defaultValue={defaults?.student_number} required placeholder="2021XXXXXXX" />
           <Input id="degree_program" name="degree_program" label="Degree program" defaultValue={defaults?.degree_program ?? ''} placeholder="BSCS" />
+          <Input id="year_level" name="year_level" label="Year level" defaultValue={defaults?.year_level ?? ''} placeholder="1st Year" />
           <Input
             id="blocks"
             name="blocks"

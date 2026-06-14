@@ -56,20 +56,18 @@ export function Sidebar({ profile }: SidebarProps) {
           </Link>
         ))}
 
-        {profile.role === 'admin' && (
-          <Link
-            href="/users"
-            className={cn(
-              'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
-              isActive('/users')
-                ? 'bg-violet-600 text-white'
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-            )}
-          >
-            <UserCog size={16} strokeWidth={1.75} />
-            Users
-          </Link>
-        )}
+        <Link
+          href="/users"
+          className={cn(
+            'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+            isActive('/users')
+              ? 'bg-violet-600 text-white'
+              : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+          )}
+        >
+          <UserCog size={16} strokeWidth={1.75} />
+          Users
+        </Link>
       </nav>
 
       {/* Footer */}

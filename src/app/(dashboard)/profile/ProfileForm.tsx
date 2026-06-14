@@ -85,6 +85,13 @@ export function ProfileForm({ profile }: ProfileFormProps) {
             defaultValue={profile.contact_no ?? ''}
             placeholder="+63 9XX XXX XXXX"
           />
+          <Input
+            id="year_level"
+            name="year_level"
+            label="Year level"
+            defaultValue={profile.year_level ?? ''}
+            placeholder="1st Year"
+          />
 
           {state?.ok === false && (
             <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">

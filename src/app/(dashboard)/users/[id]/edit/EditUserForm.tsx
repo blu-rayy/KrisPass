@@ -1,27 +1,32 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-import { updateUser, resetUserPassword, deleteUser } from '@/lib/actions/users'
+import { updateUser, resetUserPassword, deleteUser, setUserEventAssignments } from '@/lib/actions/users'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { CheckCircle, Copy, RotateCcw, Trash2 } from 'lucide-react'
+import { CheckCircle, Copy, RotateCcw, Trash2, Calendar } from 'lucide-react'
 import type { Profile } from '@/types'
 
 interface Props {
   profile: Profile
   currentUserId: string
+  allEvents: { id: string; name: string }[]
+  assignedEventIds: Set<string>
 }
 
-export function EditUserForm({ profile, currentUserId }: Props) {
+export function EditUserForm({ profile, currentUserId, allEvents, assignedEventIds }: Props) {
   const boundUpdate = updateUser.bind(null, profile.id)
   const boundReset = resetUserPassword.bind(null, profile.id)
   const boundDelete = deleteUser.bind(null, profile.id)
+  const boundAssign = setUserEventAssignments.bind(null, profile.id)
 
   const [updateState, updateAction, updatePending] = useActionState(boundUpdate, null)
   const [resetState, resetAction, resetPending] = useActionState(boundReset, null)
   const [deleteState, deleteAction, deletePending] = useActionState(boundDelete, null)
+  const [assignState, assignAction, assignPending] = useActionState(boundAssign, null)
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set(assignedEventIds))
 
   const isSelf = profile.id === currentUserId
 
@@ -29,6 +34,15 @@ export function EditUserForm({ profile, currentUserId }: Props) {
     await navigator.clipboard.writeText(pass)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  function toggleEvent(id: string) {
+    setCheckedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   return (
@@ -109,6 +123,58 @@ export function EditUserForm({ profile, currentUserId }: Props) {
         </form>
       </div>
 
+      {/* Assign to events */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <Calendar size={14} className="text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-900">Assigned events</h2>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">
+          Assigning to an event also creates an officer-participant record and QR pass for this user.
+        </p>
+
+        {allEvents.length === 0 ? (
+          <p className="text-sm text-gray-400">No events yet.</p>
+        ) : (
+          <form action={assignAction} className="space-y-4">
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {allEvents.map((ev) => (
+                <label
+                  key={ev.id}
+                  className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2.5 hover:border-violet-300 hover:bg-violet-50/40 cursor-pointer transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    name="event_ids"
+                    value={ev.id}
+                    checked={checkedIds.has(ev.id)}
+                    onChange={() => toggleEvent(ev.id)}
+                    className="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                  />
+                  <span className="text-sm text-gray-800">{ev.name}</span>
+                </label>
+              ))}
+            </div>
+
+            {assignState?.ok === false && (
+              <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+                {assignState.error}
+              </p>
+            )}
+            {assignState?.ok === true && (
+              <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-700">
+                <CheckCircle size={14} />
+                Event assignments saved.
+              </div>
+            )}
+
+            <Button type="submit" variant="secondary" disabled={assignPending}>
+              {assignPending ? 'Saving…' : 'Save assignments'}
+            </Button>
+          </form>
+        )}
+      </div>
+
       {/* Reset password */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="text-sm font-semibold text-gray-900 mb-1">Reset password</h2>
@@ -166,12 +232,7 @@ export function EditUserForm({ profile, currentUserId }: Props) {
           )}
 
           {!confirmDelete ? (
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              onClick={() => setConfirmDelete(true)}
-            >
+            <Button type="button" variant="danger" size="sm" onClick={() => setConfirmDelete(true)}>
               <Trash2 size={14} />
               Delete user
             </Button>
@@ -186,12 +247,7 @@ export function EditUserForm({ profile, currentUserId }: Props) {
                     {deletePending ? 'Deleting…' : 'Yes, delete'}
                   </Button>
                 </form>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setConfirmDelete(false)}
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
                   Cancel
                 </Button>
               </div>

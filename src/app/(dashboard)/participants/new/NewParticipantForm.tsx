@@ -6,12 +6,19 @@ import { createParticipant } from '@/lib/actions/participants'
 import { ParticipantFields } from '../ParticipantFields'
 import { Button } from '@/components/ui/Button'
 
-export function NewParticipantForm() {
+interface Props {
+  eventId: string | null
+}
+
+export function NewParticipantForm({ eventId }: Props) {
   const [state, action, pending] = useActionState(createParticipant, null)
+
+  const cancelHref = eventId ? `/participants?event=${eventId}` : '/participants'
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <form action={action} className="space-y-5">
+        {eventId && <input type="hidden" name="event_id" value={eventId} />}
         <ParticipantFields />
 
         {state?.ok === false && (
@@ -24,7 +31,7 @@ export function NewParticipantForm() {
           <Button type="submit" disabled={pending}>
             {pending ? 'Creating…' : 'Create participant'}
           </Button>
-          <Link href="/participants">
+          <Link href={cancelHref}>
             <Button type="button" variant="ghost">Cancel</Button>
           </Link>
         </div>

@@ -4,7 +4,13 @@ import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import { NewParticipantForm } from './NewParticipantForm'
 
-export default async function NewParticipantPage() {
+interface Props {
+  searchParams: Promise<{ event?: string }>
+}
+
+export default async function NewParticipantPage({ searchParams }: Props) {
+  const { event: eventId } = await searchParams
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -17,17 +23,19 @@ export default async function NewParticipantPage() {
 
   if (profile?.role !== 'admin') redirect('/participants')
 
+  const backHref = eventId ? `/participants?event=${eventId}` : '/participants'
+
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto">
       <Link
-        href="/participants"
+        href={backHref}
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors"
       >
         <ArrowLeft size={14} />
-        Back to participants
+        {eventId ? 'Back to roster' : 'Back to participants'}
       </Link>
       <h1 className="text-xl font-semibold text-gray-900 mb-6">New participant</h1>
-      <NewParticipantForm />
+      <NewParticipantForm eventId={eventId ?? null} />
     </div>
   )
 }

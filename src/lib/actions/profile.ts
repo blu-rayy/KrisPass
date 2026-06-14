@@ -18,6 +18,7 @@ export async function updateProfile(
       committee: (formData.get('committee') as string).trim() || null,
       contact_no: (formData.get('contact_no') as string).trim() || null,
       personal_email: (formData.get('personal_email') as string).trim() || null,
+      year_level: (formData.get('year_level') as string).trim() || null,
     })
     .eq('id', user.id)
 

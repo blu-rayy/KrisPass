@@ -16,6 +16,7 @@ export interface Profile {
   school: string | null
   student_number: string | null
   degree_program: string | null
+  year_level: string | null
   blocks: string[]
   created_at: string
   updated_at: string
@@ -37,6 +38,7 @@ export interface Participant {
   school: string | null
   student_number: string
   degree_program: string | null
+  year_level: string | null
   blocks: string[]
   created_at: string
   updated_at: string

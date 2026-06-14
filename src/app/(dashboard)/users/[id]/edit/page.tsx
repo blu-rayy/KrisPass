@@ -24,13 +24,23 @@ export default async function EditUserPage({ params }: Props) {
 
   if (currentProfile?.role !== 'admin') redirect('/events')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', id)
-    .single<Profile>()
+  const [profileResult, eventsResult, staffResult] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', id).single<Profile>(),
+    supabase
+      .from('events')
+      .select('id, name')
+      .order('created_at', { ascending: false })
+      .returns<{ id: string; name: string }[]>(),
+    supabase
+      .from('event_staff')
+      .select('event_id')
+      .eq('profile_id', id)
+      .returns<{ event_id: string }[]>(),
+  ])
 
-  if (!profile) notFound()
+  if (!profileResult.data) notFound()
+
+  const assignedEventIds = new Set((staffResult.data ?? []).map((r) => r.event_id))
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto">
@@ -41,10 +51,13 @@ export default async function EditUserPage({ params }: Props) {
         <ArrowLeft size={14} />
         Back to users
       </Link>
-      <h1 className="text-xl font-semibold text-gray-900 mb-6">
-        Edit user
-      </h1>
-      <EditUserForm profile={profile} currentUserId={user.id} />
+      <h1 className="text-xl font-semibold text-gray-900 mb-6">Edit user</h1>
+      <EditUserForm
+        profile={profileResult.data}
+        currentUserId={user.id}
+        allEvents={eventsResult.data ?? []}
+        assignedEventIds={assignedEventIds}
+      />
     </div>
   )
 }

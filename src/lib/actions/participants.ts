@@ -50,6 +50,7 @@ function mapRow(row: CsvRow) {
     school: row.school?.trim() || null,
     student_number: row.student_number.trim(),
     degree_program: row.degree_program?.trim() || null,
+    year_level: row.year_level?.trim() || null,
     blocks,
   }
 }
@@ -171,6 +172,7 @@ function parseParticipantForm(formData: FormData) {
     school: (formData.get('school') as string).trim() || null,
     student_number: (formData.get('student_number') as string).trim(),
     degree_program: (formData.get('degree_program') as string).trim() || null,
+    year_level: (formData.get('year_level') as string).trim() || null,
     blocks: rawBlocks
       ? rawBlocks.split(',').map((b) => b.trim()).filter(Boolean)
       : [],
@@ -191,15 +193,96 @@ export async function createParticipant(
   if (!data.personal_email) return { ok: false, error: 'Personal email is required.' }
   if (!data.student_number) return { ok: false, error: 'Student number is required.' }
 
+  const eventId = (formData.get('event_id') as string | null)?.trim() || null
+
   const admin = createAdminClient()
-  const { data: inserted, error } = await admin
+  const { data: upserted, error } = await admin
     .from('participants')
-    .insert(data)
+    .upsert(data, { onConflict: 'school_email' })
     .select('id')
     .single()
 
   if (error) return { ok: false, error: error.message }
-  redirect(`/participants/${inserted.id}/edit`)
+
+  if (eventId) {
+    const { data: existing } = await admin
+      .from('event_roster')
+      .select('qr_token')
+      .eq('event_id', eventId)
+      .eq('participant_id', upserted.id)
+      .single()
+
+    if (!existing) {
+      await admin
+        .from('event_roster')
+        .insert({ event_id: eventId, participant_id: upserted.id, qr_token: nanoid() })
+    }
+
+    redirect(`/participants?event=${eventId}`)
+  }
+
+  redirect(`/participants/${upserted.id}/edit`)
+}
+
+// ── Event-roster actions ───────────────────────────────────────────────────
+
+export async function regenerateQrToken(
+  eventId: string,
+  participantId: string
+): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, error: 'Unauthorized.' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('event_roster')
+    .update({ qr_token: nanoid() })
+    .eq('event_id', eventId)
+    .eq('participant_id', participantId)
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true, data: undefined }
+}
+
+export async function removeFromRoster(
+  eventId: string,
+  participantId: string
+): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, error: 'Unauthorized.' }
+
+  const admin = createAdminClient()
+
+  // Get all session IDs for this event so we can wipe attendances
+  const { data: sessions } = await admin
+    .from('event_sessions')
+    .select('id')
+    .eq('event_id', eventId)
+
+  const sessionIds = (sessions ?? []).map((s) => s.id)
+
+  if (sessionIds.length > 0) {
+    await admin
+      .from('attendances')
+      .delete()
+      .eq('participant_id', participantId)
+      .in('event_session_id', sessionIds)
+  }
+
+  await admin
+    .from('event_teams')
+    .delete()
+    .eq('event_id', eventId)
+    .eq('participant_id', participantId)
+
+  const { error } = await admin
+    .from('event_roster')
+    .delete()
+    .eq('event_id', eventId)
+    .eq('participant_id', participantId)
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true, data: undefined }
 }
 
 export async function updateParticipant(

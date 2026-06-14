@@ -44,10 +44,21 @@ type RosterEntry = {
     id: string
     first_name: string
     last_name: string
+    middle_name: string | null
+    suffix: string | null
     student_number: string
     school_email: string
+    school: string | null
+    degree_program: string | null
     participant_type: string
+    profile_id: string | null
+    profiles: { committee: string | null } | null
   } | null
+}
+
+type TeamAssignment = {
+  participant_id: string
+  teams: { name: string } | null
 }
 
 type CheckIn = {
@@ -102,10 +113,18 @@ export default async function EventDetailPage({ params }: Props) {
   const sessionIds = event.event_sessions.map((s) => s.id)
 
   // Parallel fetches
-  const [rosterResult, attendancesResult, profilesResult] = await Promise.all([
+  const [rosterResult, attendancesResult, profilesResult, teamsResult] = await Promise.all([
     supabase
       .from('event_roster')
-      .select('participant_id, participants ( id, first_name, last_name, student_number, school_email, participant_type )')
+      .select(`
+        participant_id,
+        participants (
+          id, first_name, last_name, middle_name, suffix,
+          student_number, school_email, school, degree_program,
+          participant_type, profile_id,
+          profiles ( committee )
+        )
+      `)
       .eq('event_id', id)
       .returns<RosterEntry[]>(),
 
@@ -123,11 +142,20 @@ export default async function EventDetailPage({ params }: Props) {
       .select('id, full_name, role, committee')
       .order('full_name')
       .returns<ProfileOption[]>(),
+
+    supabase
+      .from('event_teams')
+      .select('participant_id, teams ( name )')
+      .eq('event_id', id)
+      .returns<TeamAssignment[]>(),
   ])
 
   const rosterEntries = rosterResult.data ?? []
   const allAttendances = attendancesResult.data ?? []
   const allProfiles = profilesResult.data ?? []
+  const teamByParticipant = new Map(
+    (teamsResult.data ?? []).map((t) => [t.participant_id, t.teams?.name ?? null])
+  )
 
   // Scanned-by names for check-ins
   const scannedByIds = [...new Set(allAttendances.map((c) => c.scanned_by).filter(Boolean) as string[])]
@@ -172,13 +200,29 @@ export default async function EventDetailPage({ params }: Props) {
         </Link>
       </div>
 
+      {/* ── Primary actions (above stats) ── */}
+      <div className="flex items-center justify-end gap-2">
+        <Link
+          href={`/events/${id}/passes`}
+          className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700 transition-colors"
+        >
+          <Ticket size={14} /> View Passes
+        </Link>
+        <ScanQrButton eventId={id} sessions={event.event_sessions} colored />
+        <Link
+          href={`/events/${id}/live`}
+          className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700 transition-colors"
+        >
+          <Radio size={14} /> Live Dashboard
+        </Link>
+      </div>
+
       {/* ── Stats ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Attendees', value: attendees.length, icon: Users, color: 'text-blue-600' },
           { label: 'Officers', value: officers.length, icon: Users, color: 'text-violet-600' },
           { label: 'Checked In', value: checkedInIds.size, icon: UserCheck, color: 'text-green-600' },
-          { label: 'Organizers', value: (eventStaff ?? []).length, icon: Users, color: 'text-gray-600' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1">
@@ -188,37 +232,6 @@ export default async function EventDetailPage({ params }: Props) {
             <p className="text-2xl font-semibold text-gray-900">{value}</p>
           </div>
         ))}
-      </div>
-
-      {/* ── Quick actions ── */}
-      <div className="flex flex-wrap gap-2">
-        {isAdmin && (
-          <Link
-            href={`/events/${id}/import`}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-violet-300 hover:text-violet-700 transition-all"
-          >
-            <Upload size={14} /> Import CSV
-          </Link>
-        )}
-        <Link
-          href={`/events/${id}/passes`}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-violet-300 hover:text-violet-700 transition-all"
-        >
-          <Ticket size={14} /> View Passes
-        </Link>
-        <a
-          href={`/events/${id}/export`}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-green-300 hover:text-green-700 transition-all"
-        >
-          <Download size={14} /> Export Attendance
-        </a>
-        <ScanQrButton eventId={id} sessions={event.event_sessions} />
-        <Link
-          href={`/events/${id}/live`}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-violet-300 hover:text-violet-700 transition-all"
-        >
-          <Radio size={14} /> Live Dashboard
-        </Link>
       </div>
 
       {/* ── Check-ins ── */}
@@ -296,15 +309,19 @@ export default async function EventDetailPage({ params }: Props) {
       <div className="space-y-4">
         <ParticipantTable
           title="Attendees"
+          variant="attendee"
           rows={attendees}
           checkedInIds={checkedInIds}
+          teamByParticipant={teamByParticipant}
           eventId={id}
           isAdmin={isAdmin}
         />
         <ParticipantTable
           title="Officers"
+          variant="officer"
           rows={officers}
           checkedInIds={checkedInIds}
+          teamByParticipant={teamByParticipant}
           eventId={id}
           isAdmin={isAdmin}
         />
@@ -320,22 +337,50 @@ export default async function EventDetailPage({ params }: Props) {
         allProfiles={allProfiles}
         isAdmin={isAdmin}
       />
+
+      {/* ── Bottom actions ── */}
+      <div className="flex items-center justify-end gap-2">
+        {isAdmin && (
+          <Link
+            href={`/events/${id}/import`}
+            className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700 transition-colors"
+          >
+            <Upload size={14} /> Import Participants
+          </Link>
+        )}
+        <a
+          href={`/events/${id}/export`}
+          className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 transition-colors"
+        >
+          <Download size={14} /> Export Attendance
+        </a>
+      </div>
     </div>
   )
 }
 
 // ── sub-component (server) ─────────────────────────────────────────────────
 
+function formatName(p: RosterEntry['participants']): string {
+  if (!p) return '—'
+  const parts = [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(' ')
+  return p.suffix ? `${parts} ${p.suffix}` : parts
+}
+
 function ParticipantTable({
   title,
+  variant,
   rows,
   checkedInIds,
+  teamByParticipant,
   eventId,
   isAdmin,
 }: {
   title: string
+  variant: 'attendee' | 'officer'
   rows: { participant_id: string; participants: RosterEntry['participants'] }[]
   checkedInIds: Set<string>
+  teamByParticipant: Map<string, string | null>
   eventId: string
   isAdmin: boolean
 }) {
@@ -350,27 +395,49 @@ function ParticipantTable({
       </div>
       {rows.length > 0 ? (
         <div className="overflow-x-auto max-h-72 overflow-y-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col className="w-[200px]" />
+              <col className="w-[120px] hidden sm:table-column" />
+              <col className="w-[180px] hidden md:table-column" />
+              <col className="w-[100px] hidden lg:table-column" />
+              <col className="w-[100px]" />
+              {isAdmin && <col className="w-[36px]" />}
+            </colgroup>
             <thead className="sticky top-0 bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Name</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden sm:table-cell">Student No.</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden md:table-cell">Email</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden sm:table-cell">
+                  {variant === 'attendee' ? 'Team' : 'Committee'}
+                </th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden md:table-cell">
+                  {variant === 'attendee' ? 'School' : 'Student No.'}
+                </th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden lg:table-cell">Program</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Status</th>
-                {isAdmin && <th className="px-4 py-2.5" />}
+                {isAdmin && <th className="px-2 py-2.5" />}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {rows.map(({ participant_id, participants: p }) => (
                 <tr key={participant_id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2.5 font-medium text-gray-900">
-                    {p ? `${p.last_name}, ${p.first_name}` : '—'}
+                  <td className="px-4 py-2.5 font-medium text-gray-900 truncate">
+                    {formatName(p)}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-500 font-mono text-xs hidden sm:table-cell">
-                    {p?.student_number ?? '—'}
+                  <td className="px-4 py-2.5 text-gray-500 text-xs hidden sm:table-cell truncate">
+                    {variant === 'attendee'
+                      ? (teamByParticipant.get(participant_id) ?? <span className="text-gray-300">—</span>)
+                      : ((p?.profiles as { committee: string | null } | null)?.committee ?? <span className="text-gray-300">—</span>)
+                    }
                   </td>
-                  <td className="px-4 py-2.5 text-gray-400 text-xs hidden md:table-cell">
-                    {p?.school_email ?? '—'}
+                  <td className="px-4 py-2.5 text-gray-500 text-xs hidden md:table-cell truncate">
+                    {variant === 'attendee'
+                      ? (p?.school ?? <span className="text-gray-300">—</span>)
+                      : (p?.student_number ?? <span className="text-gray-300">—</span>)
+                    }
+                  </td>
+                  <td className="px-4 py-2.5 text-gray-500 text-xs hidden lg:table-cell truncate">
+                    {p?.degree_program ?? <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-4 py-2.5">
                     {checkedInIds.has(participant_id) ? (

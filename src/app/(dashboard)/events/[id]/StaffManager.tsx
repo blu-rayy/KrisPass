@@ -1,10 +1,10 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { addStaff, removeStaff } from '@/lib/actions/events'
 import { Button } from '@/components/ui/Button'
-import { UserPlus, X, CheckCircle, Users } from 'lucide-react'
+import { UserPlus, X, CheckCircle, Users, ChevronDown } from 'lucide-react'
 
 type StaffMember = {
   profile_id: string
@@ -34,6 +34,7 @@ export function StaffManager({ eventId, staff, allProfiles, isAdmin }: Props) {
   const router = useRouter()
   const boundAdd = addStaff.bind(null, eventId)
   const [state, addAction, pending] = useActionState(boundAdd, null)
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     if (state?.ok === true) router.refresh()
@@ -44,12 +45,18 @@ export function StaffManager({ eventId, staff, allProfiles, isAdmin }: Props) {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full px-5 py-4 flex items-center gap-2 hover:bg-gray-50 transition-colors text-left"
+      >
         <Users size={15} className="text-gray-400" />
         <h2 className="text-sm font-semibold text-gray-900">Staff</h2>
-        <span className="ml-auto text-xs text-gray-400">{staff.length} assigned</span>
-      </div>
+        <span className="ml-auto text-xs text-gray-400 mr-2">{staff.length} assigned</span>
+        <ChevronDown size={14} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
 
+      {open && <><div className="border-t border-gray-100" />
       {staff.length > 0 ? (
         <div className="divide-y divide-gray-100">
           {staff.map((s) => (
@@ -119,6 +126,7 @@ export function StaffManager({ eventId, staff, allProfiles, isAdmin }: Props) {
           <p className="text-xs text-gray-400">All users are already assigned.</p>
         </div>
       )}
+      </>}
     </div>
   )
 }

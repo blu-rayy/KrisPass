@@ -1,10 +1,10 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { addSession, deleteSession } from '@/lib/actions/events'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { Plus, Trash2, CheckCircle, CalendarDays } from 'lucide-react'
+import { Plus, Trash2, CheckCircle, CalendarDays, ChevronDown } from 'lucide-react'
 
 type Session = {
   id: string
@@ -29,14 +29,22 @@ function fmtSessionTime(iso: string): string {
 export function SessionManager({ eventId, sessions }: Props) {
   const boundAdd = addSession.bind(null, eventId)
   const [state, addAction, pending] = useActionState(boundAdd, null)
+  const [open, setOpen] = useState(false)
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full px-5 py-4 flex items-center gap-2 hover:bg-gray-50 transition-colors text-left"
+      >
         <CalendarDays size={15} className="text-gray-400" />
         <h2 className="text-sm font-semibold text-gray-900">Sessions</h2>
-        <span className="ml-auto text-xs text-gray-400">{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
-      </div>
+        <span className="ml-auto text-xs text-gray-400 mr-2">{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
+        <ChevronDown size={14} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && <div className="border-t border-gray-100">
 
       {sessions.length > 0 ? (
         <div className="divide-y divide-gray-100">
@@ -123,6 +131,7 @@ export function SessionManager({ eventId, sessions }: Props) {
           </Button>
         </form>
       </div>
+      </div>}
     </div>
   )
 }

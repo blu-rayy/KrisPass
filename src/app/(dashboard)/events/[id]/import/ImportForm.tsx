@@ -147,6 +147,10 @@ export function ImportForm({ eventId }: Props) {
               <p className="text-2xl font-semibold text-violet-700">{state.data.added_to_roster}</p>
               <p className="text-xs text-violet-600 mt-0.5">Added to roster</p>
             </div>
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-center">
+              <p className="text-2xl font-semibold text-amber-700">{state.data.teams_assigned}</p>
+              <p className="text-xs text-amber-600 mt-0.5">Teams assigned</p>
+            </div>
           </div>
 
           {state.data.errors.length > 0 && (

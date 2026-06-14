@@ -52,6 +52,7 @@ function mapRow(row: CsvRow) {
     degree_program: row.degree_program?.trim() || null,
     year_level: row.year_level?.trim() || null,
     blocks,
+    team_name: row.team_name?.trim() || null,
   }
 }
 
@@ -79,7 +80,7 @@ export async function importParticipants(
   }
 
   // Validate all rows first; collect errors but continue processing valid rows
-  const result: ImportResult = { inserted: 0, updated: 0, added_to_roster: 0, errors: [] }
+  const result: ImportResult = { inserted: 0, updated: 0, added_to_roster: 0, teams_assigned: 0, errors: [] }
   const validRows: { mapped: ReturnType<typeof mapRow>; rowNum: number }[] = []
 
   for (let i = 0; i < rows.length; i++) {
@@ -97,6 +98,20 @@ export async function importParticipants(
   }
 
   const admin = createAdminClient()
+
+  // Pre-upsert all unique teams for this event, build name→id map
+  const uniqueTeamNames = [
+    ...new Set(validRows.map((r) => r.mapped.team_name).filter(Boolean) as string[]),
+  ]
+  const teamIdByName = new Map<string, string>()
+  for (const teamName of uniqueTeamNames) {
+    const { data: team } = await admin
+      .from('teams')
+      .upsert({ event_id: eventId, name: teamName }, { onConflict: 'event_id,name' })
+      .select('id')
+      .single<{ id: string }>()
+    if (team) teamIdByName.set(teamName, team.id)
+  }
 
   // Pre-fetch: which emails already exist as participants
   const emails = validRows.map((r) => r.mapped.school_email)
@@ -121,11 +136,12 @@ export async function importParticipants(
 
   // Process each valid row
   for (const { mapped, rowNum } of validRows) {
-    const wasExisting = existingByEmail.has(mapped.school_email)
+    const { team_name, ...participantData } = mapped
+    const wasExisting = existingByEmail.has(participantData.school_email)
 
     const { data: upserted, error: upsertErr } = await admin
       .from('participants')
-      .upsert(mapped, { onConflict: 'school_email' })
+      .upsert(participantData, { onConflict: 'school_email' })
       .select('id')
       .single()
 
@@ -147,7 +163,23 @@ export async function importParticipants(
         result.errors.push({ row: rowNum, message: `Roster: ${rosterErr.message}` })
       } else {
         result.added_to_roster++
-        alreadyRostered.add(upserted.id) // prevent duplicate in same import
+        alreadyRostered.add(upserted.id)
+      }
+    }
+
+    // Assign to team if provided
+    const teamId = team_name ? teamIdByName.get(team_name) : null
+    if (teamId) {
+      const { error: teamErr } = await admin
+        .from('event_teams')
+        .upsert(
+          { event_id: eventId, participant_id: upserted.id, team_id: teamId },
+          { onConflict: 'event_id,participant_id' }
+        )
+      if (teamErr) {
+        result.errors.push({ row: rowNum, message: `Team: ${teamErr.message}` })
+      } else {
+        result.teams_assigned++
       }
     }
   }

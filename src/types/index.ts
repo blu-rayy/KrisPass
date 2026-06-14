@@ -109,6 +109,7 @@ export interface ImportResult {
   inserted: number
   updated: number
   added_to_roster: number
+  teams_assigned: number
   errors: CsvRowError[]
 }
 

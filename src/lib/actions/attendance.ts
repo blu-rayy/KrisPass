@@ -1,6 +1,8 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { ActionResult, CheckInResponse } from '@/types'
 
 export async function checkIn(
@@ -46,27 +48,7 @@ export async function checkIn(
   const team_name =
     (teamData?.teams as unknown as { name: string } | null)?.name ?? null
 
-  // Check for existing attendance
-  const { data: existing } = await supabase
-    .from('attendances')
-    .select('scanned_at')
-    .eq('event_session_id', sessionId)
-    .eq('participant_id', roster.participant_id)
-    .maybeSingle()
-
-  if (existing) {
-    return {
-      ok: true,
-      data: {
-        result: 'already_scanned',
-        participant: roster.participants as unknown as CheckInResponse['participant'],
-        team_name,
-        scanned_at: existing.scanned_at,
-      },
-    }
-  }
-
-  // Record attendance
+  // Always insert — duplicate check-ins are allowed
   const { error } = await supabase.from('attendances').insert({
     event_session_id: sessionId,
     participant_id: roster.participant_id,
@@ -83,4 +65,19 @@ export async function checkIn(
       team_name,
     },
   }
+}
+
+// Direct form action — no useActionState
+export async function deleteAttendance(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const attendanceId = formData.get('attendance_id') as string
+  const eventId = formData.get('event_id') as string
+
+  const admin = createAdminClient()
+  await admin.from('attendances').delete().eq('id', attendanceId)
+
+  revalidatePath(`/events/${eventId}`)
 }

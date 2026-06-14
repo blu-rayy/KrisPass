@@ -10,6 +10,7 @@ import { StaffManager } from './StaffManager'
 import { ScanQrButton } from './ScanQrButton'
 import { formatDateTime } from '@/lib/utils'
 import { removeFromRoster } from '@/lib/actions/events'
+import { deleteAttendance } from '@/lib/actions/attendance'
 
 // ── types ─────────────────────────────────────────────────────────────────
 
@@ -127,10 +128,9 @@ export default async function EventDetailPage({ params }: Props) {
   const rosterEntries = rosterResult.data ?? []
   const allAttendances = attendancesResult.data ?? []
   const allProfiles = profilesResult.data ?? []
-  const recentCheckIns = allAttendances.slice(0, 15)
 
-  // Scanned-by names for recent check-ins
-  const scannedByIds = [...new Set(recentCheckIns.map((c) => c.scanned_by).filter(Boolean) as string[])]
+  // Scanned-by names for check-ins
+  const scannedByIds = [...new Set(allAttendances.map((c) => c.scanned_by).filter(Boolean) as string[])]
   const staffById = new Map<string, string>()
   if (scannedByIds.length > 0) {
     const { data: sp } = await supabase.from('profiles').select('id, full_name').in('id', scannedByIds)
@@ -221,14 +221,14 @@ export default async function EventDetailPage({ params }: Props) {
         </Link>
       </div>
 
-      {/* ── Recent check-ins ── */}
+      {/* ── Check-ins ── */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
           <Clock size={15} className="text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-900">Recent check-ins</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Check-ins</h2>
           <span className="ml-auto text-xs text-gray-400">{allAttendances.length} total</span>
         </div>
-        {recentCheckIns.length > 0 ? (
+        {allAttendances.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -238,10 +238,11 @@ export default async function EventDetailPage({ params }: Props) {
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden sm:table-cell">Session</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Time</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden md:table-cell">Scanned by</th>
+                  {isAdmin && <th className="px-2 py-2.5" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {recentCheckIns.map((c) => (
+                {allAttendances.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50">
                     <td className="px-4 py-2.5 font-medium text-gray-900">
                       {c.participants ? `${c.participants.last_name}, ${c.participants.first_name}` : '—'}
@@ -266,6 +267,21 @@ export default async function EventDetailPage({ params }: Props) {
                     <td className="px-4 py-2.5 text-gray-500 text-xs hidden md:table-cell">
                       {c.scanned_by ? (staffById.get(c.scanned_by) ?? '—') : '—'}
                     </td>
+                    {isAdmin && (
+                      <td className="px-2 py-2.5">
+                        <form action={deleteAttendance}>
+                          <input type="hidden" name="attendance_id" value={c.id} />
+                          <input type="hidden" name="event_id" value={id} />
+                          <button
+                            type="submit"
+                            title="Delete check-in"
+                            className="text-gray-300 hover:text-red-500 transition-colors"
+                          >
+                            <X size={14} />
+                          </button>
+                        </form>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

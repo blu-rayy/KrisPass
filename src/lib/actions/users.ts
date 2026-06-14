@@ -96,11 +96,27 @@ export async function updateUser(
   const full_name = (formData.get('full_name') as string).trim()
   const role = formData.get('role') as Role
   const committee = (formData.get('committee') as string).trim() || null
+  const first_name = (formData.get('first_name') as string).trim() || null
+  const last_name = (formData.get('last_name') as string).trim() || null
+  const middle_name = (formData.get('middle_name') as string).trim() || null
+  const suffix = (formData.get('suffix') as string).trim() || null
+  const personal_email = (formData.get('personal_email') as string).trim().toLowerCase() || null
+  const contact_no = (formData.get('contact_no') as string).trim() || null
+  const student_number = (formData.get('student_number') as string).trim() || null
+  const school = (formData.get('school') as string).trim() || null
+  const degree_program = (formData.get('degree_program') as string).trim() || null
+  const blocksRaw = (formData.get('blocks') as string).trim()
+  const blocks = blocksRaw ? blocksRaw.split(',').map((b) => b.trim()).filter(Boolean) : []
 
-  const supabase = await createClient()
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from('profiles')
-    .update({ full_name, role, committee })
+    .update({
+      full_name, role, committee,
+      first_name, last_name, middle_name, suffix,
+      personal_email, contact_no,
+      student_number, school, degree_program, blocks,
+    })
     .eq('id', id)
 
   if (error) return { ok: false, error: error.message }

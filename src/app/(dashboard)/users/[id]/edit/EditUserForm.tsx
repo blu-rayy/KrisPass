@@ -69,9 +69,10 @@ export function EditUserForm({ profile, currentUserId, allEvents, assignedEventI
       </div>
 
       {/* Edit form */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">Edit details</h2>
-        <form action={updateAction} className="space-y-4">
+      <form action={updateAction} className="space-y-4">
+        {/* Account details */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-sm font-semibold text-gray-900">Account details</h2>
           <Input
             id="full_name"
             name="full_name"
@@ -104,24 +105,88 @@ export function EditUserForm({ profile, currentUserId, allEvents, assignedEventI
             defaultValue={profile.committee ?? ''}
             placeholder="e.g. Academics"
           />
+        </div>
 
-          {updateState?.ok === false && (
-            <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
-              {updateState.error}
-            </p>
-          )}
-          {updateState?.ok === true && (
-            <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-700">
-              <CheckCircle size={14} />
-              Changes saved.
-            </div>
-          )}
+        {/* Personal info */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-sm font-semibold text-gray-900">Personal info</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <Input id="first_name" name="first_name" label="First name" defaultValue={profile.first_name ?? ''} placeholder="Juan" />
+            <Input id="last_name" name="last_name" label="Last name" defaultValue={profile.last_name ?? ''} placeholder="dela Cruz" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input id="middle_name" name="middle_name" label="Middle name" defaultValue={profile.middle_name ?? ''} placeholder="Reyes" />
+            <Input id="suffix" name="suffix" label="Suffix" defaultValue={profile.suffix ?? ''} placeholder="Jr." />
+          </div>
+          <Input
+            id="personal_email"
+            name="personal_email"
+            type="email"
+            label="Personal email"
+            defaultValue={profile.personal_email ?? ''}
+            placeholder="juan@gmail.com"
+          />
+          <Input
+            id="contact_no"
+            name="contact_no"
+            label="Contact number"
+            defaultValue={profile.contact_no ?? ''}
+            placeholder="09171234567"
+          />
+        </div>
 
-          <Button type="submit" disabled={updatePending}>
-            {updatePending ? 'Saving…' : 'Save changes'}
-          </Button>
-        </form>
-      </div>
+        {/* Academic info */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-sm font-semibold text-gray-900">Academic info</h2>
+          <Input
+            id="student_number"
+            name="student_number"
+            label="Student number"
+            defaultValue={profile.student_number ?? ''}
+            placeholder="2021-12345"
+          />
+          <Input
+            id="school"
+            name="school"
+            label="School"
+            defaultValue={profile.school ?? ''}
+            placeholder="FEU Tech"
+          />
+          <Input
+            id="degree_program"
+            name="degree_program"
+            label="Degree program"
+            defaultValue={profile.degree_program ?? ''}
+            placeholder="BS Computer Science"
+          />
+          <div className="space-y-1">
+            <Input
+              id="blocks"
+              name="blocks"
+              label="Blocks"
+              defaultValue={profile.blocks?.join(', ') ?? ''}
+              placeholder="TN01, TN02"
+            />
+            <p className="text-xs text-gray-400">Separate multiple blocks with commas.</p>
+          </div>
+        </div>
+
+        {updateState?.ok === false && (
+          <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+            {updateState.error}
+          </p>
+        )}
+        {updateState?.ok === true && (
+          <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-700">
+            <CheckCircle size={14} />
+            Changes saved.
+          </div>
+        )}
+
+        <Button type="submit" disabled={updatePending}>
+          {updatePending ? 'Saving…' : 'Save changes'}
+        </Button>
+      </form>
 
       {/* Assign to events */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

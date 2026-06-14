@@ -302,6 +302,21 @@ export async function removeFromRoster(formData: FormData) {
 
   const admin = createAdminClient()
 
+  // If this participant is a staff member, also remove from event_staff
+  const { data: participant } = await admin
+    .from('participants')
+    .select('profile_id')
+    .eq('id', participantId)
+    .maybeSingle<{ profile_id: string | null }>()
+
+  if (participant?.profile_id) {
+    await admin
+      .from('event_staff')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('profile_id', participant.profile_id)
+  }
+
   const { data: sessions } = await admin
     .from('event_sessions')
     .select('id')

@@ -152,13 +152,22 @@ export function EditUserForm({ profile, currentUserId, allEvents, assignedEventI
             defaultValue={profile.school ?? ''}
             placeholder="FEU Tech"
           />
-          <Input
-            id="degree_program"
-            name="degree_program"
-            label="Degree program"
-            defaultValue={profile.degree_program ?? ''}
-            placeholder="BS Computer Science"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              id="degree_program"
+              name="degree_program"
+              label="Degree program"
+              defaultValue={profile.degree_program ?? ''}
+              placeholder="BS Computer Science"
+            />
+            <Input
+              id="year_level"
+              name="year_level"
+              label="Year level"
+              defaultValue={profile.year_level ?? ''}
+              placeholder="1"
+            />
+          </div>
           <div className="space-y-1">
             <Input
               id="blocks"

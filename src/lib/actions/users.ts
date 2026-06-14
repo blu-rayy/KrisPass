@@ -43,6 +43,7 @@ export async function createUser(
   const student_number = (formData.get('student_number') as string).trim() || null
   const school = (formData.get('school') as string).trim() || null
   const degree_program = (formData.get('degree_program') as string).trim() || null
+  const year_level = (formData.get('year_level') as string).trim() || null
   const blocksRaw = (formData.get('blocks') as string).trim()
   const blocks = blocksRaw ? blocksRaw.split(',').map((b) => b.trim()).filter(Boolean) : []
 
@@ -74,6 +75,7 @@ export async function createUser(
       student_number,
       school,
       degree_program,
+      year_level,
       blocks,
     })
 
@@ -105,6 +107,7 @@ export async function updateUser(
   const student_number = (formData.get('student_number') as string).trim() || null
   const school = (formData.get('school') as string).trim() || null
   const degree_program = (formData.get('degree_program') as string).trim() || null
+  const year_level = (formData.get('year_level') as string).trim() || null
   const blocksRaw = (formData.get('blocks') as string).trim()
   const blocks = blocksRaw ? blocksRaw.split(',').map((b) => b.trim()).filter(Boolean) : []
 
@@ -115,7 +118,7 @@ export async function updateUser(
       full_name, role, committee,
       first_name, last_name, middle_name, suffix,
       personal_email, contact_no,
-      student_number, school, degree_program, blocks,
+      student_number, school, degree_program, year_level, blocks,
     })
     .eq('id', id)
 

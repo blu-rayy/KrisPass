@@ -144,12 +144,20 @@ export function NewUserForm() {
             label="School"
             placeholder="FEU Tech"
           />
-          <Input
-            id="degree_program"
-            name="degree_program"
-            label="Degree program"
-            placeholder="BS Computer Science"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              id="degree_program"
+              name="degree_program"
+              label="Degree program"
+              placeholder="BS Computer Science"
+            />
+            <Input
+              id="year_level"
+              name="year_level"
+              label="Year level"
+              placeholder="1"
+            />
+          </div>
           <Input
             id="blocks"
             name="blocks"

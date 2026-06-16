@@ -52,6 +52,7 @@ type RosterEntry = {
     degree_program: string | null
     participant_type: string
     profile_id: string | null
+    committee: string | null
     profiles: { committee: string | null } | null
   } | null
 }
@@ -121,7 +122,7 @@ export default async function EventDetailPage({ params }: Props) {
         participants (
           id, first_name, last_name, middle_name, suffix,
           student_number, school_email, school, degree_program,
-          participant_type, profile_id,
+          participant_type, profile_id, committee,
           profiles ( committee )
         )
       `)
@@ -427,7 +428,7 @@ function ParticipantTable({
                   <td className="px-4 py-2.5 text-gray-500 text-xs hidden sm:table-cell truncate">
                     {variant === 'attendee'
                       ? (teamByParticipant.get(participant_id) ?? <span className="text-gray-300">—</span>)
-                      : ((p?.profiles as { committee: string | null } | null)?.committee ?? <span className="text-gray-300">—</span>)
+                      : (p?.committee ?? (p?.profiles as { committee: string | null } | null)?.committee ?? <span className="text-gray-300">—</span>)
                     }
                   </td>
                   <td className="px-4 py-2.5 text-gray-500 text-xs hidden md:table-cell truncate">

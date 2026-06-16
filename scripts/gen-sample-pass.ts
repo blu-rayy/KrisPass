@@ -5,8 +5,8 @@ import { renderPass } from '../src/lib/pass/render'
 
 async function main() {
 const png = await renderPass({
-  firstName: 'Maria',
-  lastName: 'Santos',
+  firstName: 'Shiraine Mariaine',
+  lastName: 'Btuin',
   middleName: 'Cruz',
   suffix: null,
   studentNumber: '2023-12345',

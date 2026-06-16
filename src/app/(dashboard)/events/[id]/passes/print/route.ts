@@ -4,6 +4,21 @@ import { renderPass, eventDateRange } from '@/lib/pass/render'
 import React from 'react'
 import { renderToBuffer, Document, Page, Image, View, StyleSheet } from '@react-pdf/renderer'
 
+export const maxDuration = 300
+
+async function renderBatched<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = []
+  for (let i = 0; i < items.length; i += concurrency) {
+    const batch = await Promise.all(items.slice(i, i + concurrency).map(fn))
+    results.push(...batch)
+  }
+  return results
+}
+
 interface Params {
   params: Promise<{ id: string }>
 }
@@ -63,26 +78,24 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (t.teams?.name) teamByParticipant.set(t.participant_id, t.teams.name)
   })
 
-  const passImages = await Promise.all(
-    roster.map(async (row) => {
-      const p = row.participants
-      if (!p) return null
-      const png = await renderPass({
-        firstName: p.first_name,
-        lastName: p.last_name,
-        middleName: p.middle_name,
-        suffix: p.suffix,
-        studentNumber: p.student_number,
-        blocks: p.blocks ?? [],
-        teamName: teamByParticipant.get(row.participant_id) ?? null,
-        participantType: p.participant_type as 'attendee' | 'officer',
-        qrToken: row.qr_token,
-        eventName: event.name,
-        eventDateRange: dateRange,
-      })
-      return `data:image/png;base64,${png.toString('base64')}`
+  const passImages = await renderBatched(roster, 8, async (row) => {
+    const p = row.participants
+    if (!p) return null
+    const png = await renderPass({
+      firstName: p.first_name,
+      lastName: p.last_name,
+      middleName: p.middle_name,
+      suffix: p.suffix,
+      studentNumber: p.student_number,
+      blocks: p.blocks ?? [],
+      teamName: teamByParticipant.get(row.participant_id) ?? null,
+      participantType: p.participant_type as 'attendee' | 'officer',
+      qrToken: row.qr_token,
+      eventName: event.name,
+      eventDateRange: dateRange,
     })
-  )
+    return `data:image/png;base64,${png.toString('base64')}`
+  })
 
   const validImages = passImages.filter(Boolean) as string[]
 

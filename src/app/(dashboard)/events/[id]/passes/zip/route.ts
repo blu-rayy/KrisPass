@@ -3,6 +3,18 @@ import { createClient } from '@/lib/supabase/server'
 import { renderPass, passFilename, eventDateRange } from '@/lib/pass/render'
 import JSZip from 'jszip'
 
+export const maxDuration = 300 // seconds (requires Vercel Pro)
+
+async function renderBatched<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  for (let i = 0; i < items.length; i += concurrency) {
+    await Promise.all(items.slice(i, i + concurrency).map(fn))
+  }
+}
+
 interface Params {
   params: Promise<{ id: string }>
 }
@@ -73,34 +85,32 @@ export async function GET(req: NextRequest, { params }: Params) {
   const zip = new JSZip()
   const eventFolder = zip.folder(event.name.replace(/[^a-z0-9 ]/gi, '').trim()) ?? zip
 
-  await Promise.all(
-    rows.map(async (row) => {
-      const p = row.participants
-      if (!p) return
+  await renderBatched(rows, 8, async (row) => {
+    const p = row.participants
+    if (!p) return
 
-      const teamName = teamByParticipant.get(row.participant_id) ?? null
+    const teamName = teamByParticipant.get(row.participant_id) ?? null
 
-      const png = await renderPass({
-        firstName: p.first_name,
-        lastName: p.last_name,
-        middleName: p.middle_name,
-        suffix: p.suffix,
-        studentNumber: p.student_number,
-        blocks: p.blocks ?? [],
-        teamName,
-        participantType: p.participant_type as 'attendee' | 'officer',
-        qrToken: row.qr_token,
-        eventName: event.name,
-        eventDateRange: dateRange,
-      })
-
-      const dest = group === 'team'
-        ? (eventFolder.folder(teamName ?? 'Unassigned') ?? eventFolder)
-        : eventFolder
-
-      dest.file(passFilename(p.last_name, p.first_name), png)
+    const png = await renderPass({
+      firstName: p.first_name,
+      lastName: p.last_name,
+      middleName: p.middle_name,
+      suffix: p.suffix,
+      studentNumber: p.student_number,
+      blocks: p.blocks ?? [],
+      teamName,
+      participantType: p.participant_type as 'attendee' | 'officer',
+      qrToken: row.qr_token,
+      eventName: event.name,
+      eventDateRange: dateRange,
     })
-  )
+
+    const dest = group === 'team'
+      ? (eventFolder.folder(teamName ?? 'Unassigned') ?? eventFolder)
+      : eventFolder
+
+    dest.file(passFilename(p.last_name, p.first_name), png)
+  })
 
   const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })
   const suffix = group === 'team' ? '-by-team' : type ? `-${type}s` : ''

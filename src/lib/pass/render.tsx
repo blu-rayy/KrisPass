@@ -56,7 +56,7 @@ function getFonts() {
 let _templateDataUrl: string | null = null
 function getTemplateDataUrl(): string {
   if (!_templateDataUrl) {
-    const svgBuf = readFileSync(path.join(process.cwd(), 'qr_pass.svg'))
+    const svgBuf = readFileSync(path.join(process.cwd(), 'public/qr_pass.svg'))
     const resvg = new Resvg(svgBuf, { fitTo: { mode: 'width', value: PASS_W } })
     const png = resvg.render().asPng()
     _templateDataUrl = `data:image/png;base64,${Buffer.from(png).toString('base64')}`

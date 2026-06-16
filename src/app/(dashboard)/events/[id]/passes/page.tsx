@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Download, FileArchive, FileText, ArrowLeft } from 'lucide-react'
 import { eventDateRange } from '@/lib/pass/render'
+import QRCode from 'qrcode'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -73,6 +74,21 @@ export default async function PassesPage({ params, searchParams }: Props) {
   const displayed = activeTab === 'officer' ? officers : activeTab === 'staff' ? null : attendees
 
   const dateRange = eventDateRange(event.event_sessions)
+
+  // Generate real QR codes for the active tab only
+  const qrByParticipant = new Map<string, string>()
+  if (displayed) {
+    await Promise.all(
+      displayed.map(async ({ participant_id, qr_token }) => {
+        const url = await QRCode.toDataURL(qr_token, {
+          width: 80,
+          margin: 1,
+          color: { dark: '#1e1b4b', light: '#ffffff' },
+        })
+        qrByParticipant.set(participant_id, url)
+      })
+    )
+  }
 
   return (
     <div className="px-4 py-6 max-w-5xl mx-auto space-y-5">
@@ -170,13 +186,8 @@ export default async function PassesPage({ params, searchParams }: Props) {
                       </span>
                     </div>
                     <div className="flex-1" />
-                    <div className="bg-white rounded p-1 w-10 h-10 flex items-center justify-center shrink-0">
-                      <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-px">
-                        {[1,1,1,1,1, 1,0,0,0,1, 1,0,1,0,1, 1,0,0,0,1, 1,1,1,1,1].map((v, i) => (
-                          <div key={i} className={`${v ? 'bg-[#1e1b4b]' : 'bg-white'}`} />
-                        ))}
-                      </div>
-                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={qrByParticipant.get(participant_id)} width={40} height={40} alt="QR" className="w-10 h-10 rounded" />
                     <div className="flex-1" />
                     <div className="text-center w-full px-1">
                       <p className="text-white text-[9px] font-bold tracking-wide truncate">{p.last_name.toUpperCase()}</p>

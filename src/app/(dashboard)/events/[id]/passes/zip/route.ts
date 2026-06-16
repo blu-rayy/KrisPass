@@ -24,6 +24,7 @@ type RosterRow = {
 export async function GET(req: NextRequest, { params }: Params) {
   const { id: eventId } = await params
   const type = req.nextUrl.searchParams.get('type') // 'attendee' | 'officer' | null (= all)
+  const group = req.nextUrl.searchParams.get('group') // 'team' | null
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -70,12 +71,14 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   // Render all passes and add to ZIP
   const zip = new JSZip()
-  const folder = zip.folder(event.name.replace(/[^a-z0-9 ]/gi, '').trim()) ?? zip
+  const eventFolder = zip.folder(event.name.replace(/[^a-z0-9 ]/gi, '').trim()) ?? zip
 
   await Promise.all(
     rows.map(async (row) => {
       const p = row.participants
       if (!p) return
+
+      const teamName = teamByParticipant.get(row.participant_id) ?? null
 
       const png = await renderPass({
         firstName: p.first_name,
@@ -84,19 +87,23 @@ export async function GET(req: NextRequest, { params }: Params) {
         suffix: p.suffix,
         studentNumber: p.student_number,
         blocks: p.blocks ?? [],
-        teamName: teamByParticipant.get(row.participant_id) ?? null,
+        teamName,
         participantType: p.participant_type as 'attendee' | 'officer',
         qrToken: row.qr_token,
         eventName: event.name,
         eventDateRange: dateRange,
       })
 
-      folder.file(passFilename(p.last_name, p.first_name), png)
+      const dest = group === 'team'
+        ? (eventFolder.folder(teamName ?? 'Unassigned') ?? eventFolder)
+        : eventFolder
+
+      dest.file(passFilename(p.last_name, p.first_name), png)
     })
   )
 
   const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })
-  const suffix = type ? `-${type}s` : ''
+  const suffix = group === 'team' ? '-by-team' : type ? `-${type}s` : ''
   const eventSlug = event.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
   return new NextResponse(new Uint8Array(zipBuffer), {

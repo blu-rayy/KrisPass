@@ -1,3 +1,4 @@
+import React from 'react'
 import satori from 'satori'
 import { Resvg } from '@resvg/resvg-js'
 import QRCode from 'qrcode'
@@ -18,6 +19,29 @@ export type PassData = {
   eventDateRange: string
 }
 
+// SVG viewBox: 297.75 × 419.25  →  rendered at 1080 × 1521
+const PASS_W = 1080
+const PASS_H = 1521
+
+// Positions derived from the qr_pass.svg template (screen coords at 397×559 scaled ×2.72)
+// Tweak these if the overlay drifts from the card fields.
+// Canvas: 10.5 × 14.8 cm → 1080 × 1521 px (102.86 px/cm)
+// Canva coordinates are (vertical_cm, horizontal_cm) from top-left of canvas.
+// participant_name: bottom-left (6.1, 1.3) cm, font 12.4pt = 45px
+// team_name:        bottom-left (6.9, 5.4) cm, font 7.6pt  = 28px
+// qr: bottom-left (12.6, 3.5) cm, top-right (9.2, 7.0) cm
+const CM = 102.857 // px per cm
+const LAYOUT = {
+  // White erasure boxes — sized tightly to cover only the placeholder text paths
+  nameCover:  { top: Math.round(6.1 * CM) - 56, left: Math.round(1.3 * CM) - 4, width: 500, height: 62 },
+  teamCover:  { top: Math.round(6.9 * CM) - 34, left: Math.round(5.4 * CM) - 4, width: 270, height: 40 },
+  // Real text — name nudged 1.5 px up from Canva baseline
+  name:       { top: Math.round(6.1 * CM) - 55.5, left: Math.round(1.3 * CM), fontSize: 45 },
+  teamName:   { top: Math.round(6.9 * CM) - 34, left: Math.round(5.4 * CM), fontSize: 28 },
+  // QR: top = 9.2 cm, left = 3.5 cm, size = avg of (7.0-3.5)*CM and (12.6-9.2)*CM
+  qr:         { top: Math.round(9.2 * CM) - 15, left: Math.round(3.5 * CM) - 15, size: Math.round(((7.0 - 3.5) + (12.6 - 9.2)) / 2 * CM) + 30 },
+}
+
 let _fonts: { regular: Buffer; bold: Buffer } | null = null
 function getFonts() {
   if (!_fonts) {
@@ -29,235 +53,128 @@ function getFonts() {
   return _fonts
 }
 
+let _templateDataUrl: string | null = null
+function getTemplateDataUrl(): string {
+  if (!_templateDataUrl) {
+    const svgBuf = readFileSync(path.join(process.cwd(), 'qr_pass.svg'))
+    const resvg = new Resvg(svgBuf, { fitTo: { mode: 'width', value: PASS_W } })
+    const png = resvg.render().asPng()
+    _templateDataUrl = `data:image/png;base64,${Buffer.from(png).toString('base64')}`
+  }
+  return _templateDataUrl
+}
+
 export async function renderPass(data: PassData): Promise<Buffer> {
   const qrDataUrl = await QRCode.toDataURL(data.qrToken, {
-    width: 500,
-    margin: 2,
+    width: LAYOUT.qr.size,
+    margin: 1,
     color: { dark: '#1e1b4b', light: '#ffffff' },
   })
 
   const fonts = getFonts()
-  const typeColor = data.participantType === 'officer' ? '#a78bfa'
-    : data.participantType === 'organizer' ? '#fbbf24'
-    : '#93c5fd'
-  const typeLabel = data.participantType === 'officer' ? 'OFFICER'
-    : data.participantType === 'organizer' ? 'ORGANIZER'
-    : 'ATTENDEE'
+  const templateDataUrl = getTemplateDataUrl()
 
-  const nameMiddle = [
-    data.firstName,
-    data.middleName ? `${data.middleName.charAt(0)}.` : null,
-    data.suffix ?? null,
-  ].filter(Boolean).join(' ')
+  const fullName = [data.firstName, data.lastName].join(' ')
 
   const svg = await satori(
     <div
       style={{
-        width: 1080,
-        height: 1920,
+        width: PASS_W,
+        height: PASS_H,
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        background: 'linear-gradient(160deg, #0d1528 0%, #0f172a 45%, #100d1f 100%)',
-        color: '#f8fafc',
-        fontFamily: 'Inter',
-        padding: '72px 60px 56px',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      {/* Top accent line */}
+      {/* Template background */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={templateDataUrl}
+        width={PASS_W}
+        height={PASS_H}
+        alt=""
+        style={{ position: 'absolute', top: 0, left: 0 }}
+      />
+
+      {/* Erase placeholder name path */}
       <div
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 6,
-          background: 'linear-gradient(90deg, #7c3aed, #a78bfa, #7c3aed)',
+          top: LAYOUT.nameCover.top,
+          left: LAYOUT.nameCover.left,
+          width: LAYOUT.nameCover.width,
+          height: LAYOUT.nameCover.height,
+          backgroundColor: '#ffffff',
           display: 'flex',
         }}
       />
 
-      {/* Wordmark + type badge */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
-        <div
-          style={{
-            fontSize: 48,
-            fontWeight: 700,
-            letterSpacing: 14,
-            color: '#a78bfa',
-            display: 'flex',
-          }}
-        >
-          KRISPASS
-        </div>
-        <div
-          style={{
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: 5,
-            color: typeColor,
-            backgroundColor: `${typeColor}1a`,
-            padding: '8px 24px',
-            borderRadius: 999,
-            border: `1.5px solid ${typeColor}55`,
-            display: 'flex',
-          }}
-        >
-          {typeLabel}
-        </div>
-      </div>
-
-      {/* Flex spacer */}
-      <div style={{ flex: 1, display: 'flex' }} />
-
-      {/* QR code */}
+      {/* Erase placeholder team_name path */}
       <div
         style={{
-          display: 'flex',
-          padding: 24,
+          position: 'absolute',
+          top: LAYOUT.teamCover.top,
+          left: LAYOUT.teamCover.left,
+          width: LAYOUT.teamCover.width,
+          height: LAYOUT.teamCover.height,
           backgroundColor: '#ffffff',
-          borderRadius: 24,
-          boxShadow: '0 0 0 1px rgba(167,139,250,0.15), 0 24px 60px rgba(0,0,0,0.5)',
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrDataUrl} width={480} height={480} alt="" />
-      </div>
-
-      <div style={{ height: 60, display: 'flex' }} />
-
-      {/* Name */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-        <div
-          style={{
-            fontSize: 68,
-            fontWeight: 700,
-            textAlign: 'center',
-            lineHeight: 1.05,
-            letterSpacing: 3,
-            color: '#f1f5f9',
-            display: 'flex',
-          }}
-        >
-          {data.lastName.toUpperCase()}
-        </div>
-        <div
-          style={{
-            fontSize: 42,
-            fontWeight: 400,
-            color: '#94a3b8',
-            textAlign: 'center',
-            display: 'flex',
-          }}
-        >
-          {nameMiddle}
-        </div>
-      </div>
-
-      <div style={{ height: 32, display: 'flex' }} />
-
-      {/* Student number */}
-      <div
-        style={{
-          fontSize: 26,
-          color: '#475569',
-          letterSpacing: 4,
-          fontWeight: 400,
           display: 'flex',
         }}
+      />
+
+      {/* Participant full name */}
+      <div
+        style={{
+          position: 'absolute',
+          top: LAYOUT.name.top,
+          left: LAYOUT.name.left,
+          width: LAYOUT.nameCover.width,
+          display: 'flex',
+          fontFamily: 'Inter',
+          fontSize: LAYOUT.name.fontSize,
+          fontWeight: 700,
+          color: '#1a0533',
+          lineHeight: 1.2,
+        }}
       >
-        {data.studentNumber}
+        {fullName}
       </div>
 
-      <div style={{ height: 32, display: 'flex' }} />
-
-      {/* Team + blocks */}
-      {(data.teamName || data.blocks.length > 0) && (
+      {/* Team name */}
+      {data.teamName && (
         <div
           style={{
+            position: 'absolute',
+            top: LAYOUT.teamName.top,
+            left: LAYOUT.teamName.left,
             display: 'flex',
-            flexDirection: 'row',
-            gap: 10,
-            flexWrap: 'wrap',
-            justifyContent: 'center',
+            fontFamily: 'Inter',
+            fontSize: LAYOUT.teamName.fontSize,
+            fontWeight: 700,
+            color: '#1a0533',
           }}
         >
-          {data.teamName && (
-            <div
-              style={{
-                fontSize: 24,
-                fontWeight: 700,
-                color: '#f8fafc',
-                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                padding: '12px 26px',
-                borderRadius: 999,
-                display: 'flex',
-              }}
-            >
-              {data.teamName}
-            </div>
-          )}
-          {data.blocks.map((b) => (
-            <div
-              key={b}
-              style={{
-                fontSize: 22,
-                fontWeight: 400,
-                color: '#94a3b8',
-                backgroundColor: '#1e293b',
-                padding: '10px 18px',
-                borderRadius: 999,
-                border: '1px solid #334155',
-                display: 'flex',
-              }}
-            >
-              {b}
-            </div>
-          ))}
+          {data.teamName}
         </div>
       )}
 
-      {/* Bottom spacer */}
-      <div style={{ flex: 1, display: 'flex' }} />
-
-      {/* Event footer */}
-      <div
+      {/* QR code */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={qrDataUrl}
+        width={LAYOUT.qr.size}
+        height={LAYOUT.qr.size}
+        alt=""
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 10,
-          borderTop: '1px solid #1e293b',
-          paddingTop: 40,
-          width: '100%',
+          position: 'absolute',
+          top: LAYOUT.qr.top,
+          left: LAYOUT.qr.left,
         }}
-      >
-        <div
-          style={{
-            fontSize: 32,
-            fontWeight: 700,
-            color: '#e2e8f0',
-            textAlign: 'center',
-            display: 'flex',
-          }}
-        >
-          {data.eventName}
-        </div>
-        <div
-          style={{
-            fontSize: 22,
-            color: '#475569',
-            textAlign: 'center',
-            display: 'flex',
-          }}
-        >
-          {data.eventDateRange}
-        </div>
-      </div>
+      />
     </div>,
     {
-      width: 1080,
-      height: 1920,
+      width: PASS_W,
+      height: PASS_H,
       fonts: [
         { name: 'Inter', data: fonts.regular, weight: 400, style: 'normal' },
         { name: 'Inter', data: fonts.bold, weight: 700, style: 'normal' },
@@ -265,7 +182,7 @@ export async function renderPass(data: PassData): Promise<Buffer> {
     }
   )
 
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1080 } })
+  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: PASS_W } })
   return Buffer.from(resvg.render().asPng())
 }
 

@@ -107,6 +107,13 @@ export default async function PassesPage({ params, searchParams }: Props) {
               ZIP All
             </a>
             <a
+              href={`/events/${id}/passes/zip?group=team`}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-violet-300 hover:text-violet-700 transition-all"
+            >
+              <FileArchive size={14} />
+              ZIP by Team
+            </a>
+            <a
               href={`/events/${id}/passes/print`}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-green-300 hover:text-green-700 transition-all"
             >

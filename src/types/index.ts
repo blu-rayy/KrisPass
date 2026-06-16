@@ -40,6 +40,7 @@ export interface Participant {
   degree_program: string | null
   year_level: string | null
   blocks: string[]
+  committee: string | null
   created_at: string
   updated_at: string
 }

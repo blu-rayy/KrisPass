@@ -20,13 +20,14 @@ const TEMPLATE_HEADERS = [
   'degree_program',
   'blocks',
   'year_level',
+  'committee',
 ].join(',')
 
 const TEMPLATE_EXAMPLE =
-  'attendee,dela Cruz,Juan,,,,juan@feutech.edu.ph,juan@gmail.com,09123456789,FEU Tech,2021100001,BSCS,,1'
+  'attendee,dela Cruz,Juan,,,,juan@feutech.edu.ph,juan@gmail.com,09123456789,FEU Tech,2021100001,BSCS,,1,'
 
 const REQUIRED_COLS = ['participant_type', 'last_name', 'first_name', 'school_email', 'personal_email', 'student_number']
-const OPTIONAL_COLS = ['middle_name', 'suffix', 'team_name', 'contact_no', 'school', 'degree_program', 'blocks', 'year_level']
+const OPTIONAL_COLS = ['middle_name', 'suffix', 'team_name', 'contact_no', 'school', 'degree_program', 'blocks', 'year_level', 'committee']
 
 function downloadTemplate() {
   const csv = [TEMPLATE_HEADERS, TEMPLATE_EXAMPLE].join('\n')

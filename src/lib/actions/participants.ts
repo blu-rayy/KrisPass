@@ -52,6 +52,7 @@ function mapRow(row: CsvRow) {
     degree_program: row.degree_program?.trim() || null,
     year_level: row.year_level?.trim() || null,
     blocks,
+    committee: row.committee?.trim() || null,
     team_name: row.team_name?.trim() || null,
   }
 }
@@ -205,6 +206,7 @@ function parseParticipantForm(formData: FormData) {
     student_number: (formData.get('student_number') as string).trim(),
     degree_program: (formData.get('degree_program') as string).trim() || null,
     year_level: (formData.get('year_level') as string).trim() || null,
+    committee: (formData.get('committee') as string | null)?.trim() || null,
     blocks: rawBlocks
       ? rawBlocks.split(',').map((b) => b.trim()).filter(Boolean)
       : [],

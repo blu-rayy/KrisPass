@@ -151,7 +151,7 @@ export async function addStaff(
   // Fetch full profile data to create/find participant
   const { data: profile } = await admin
     .from('profiles')
-    .select('full_name, first_name, last_name, middle_name, suffix, school_email, personal_email, student_number, blocks')
+    .select('full_name, first_name, last_name, middle_name, suffix, school_email, personal_email, student_number, blocks, committee')
     .eq('id', profile_id)
     .single<{
       full_name: string
@@ -163,6 +163,7 @@ export async function addStaff(
       personal_email: string | null
       student_number: string | null
       blocks: string[]
+      committee: string | null
     }>()
 
   if (profile) {
@@ -177,10 +178,9 @@ export async function addStaff(
 
     if (existingParticipant) {
       participantId = existingParticipant.id
-      // Ensure they are typed as officer
       await admin
         .from('participants')
-        .update({ participant_type: 'officer' })
+        .update({ participant_type: 'officer', committee: profile.committee })
         .eq('id', participantId)
     } else {
       // Derive name parts — prefer explicit fields, fall back to splitting full_name
@@ -205,6 +205,7 @@ export async function addStaff(
           personal_email: personalEmail,
           student_number: studentNumber,
           blocks: profile.blocks ?? [],
+          committee: profile.committee,
         })
         .select('id')
         .single<{ id: string }>()

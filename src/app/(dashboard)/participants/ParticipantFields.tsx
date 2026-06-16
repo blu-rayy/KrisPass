@@ -66,6 +66,13 @@ export function ParticipantFields({ defaults }: Props) {
             defaultValue={defaults?.blocks?.join(', ') ?? ''}
             placeholder="A1, B2 (comma-separated)"
           />
+          <Input
+            id="committee"
+            name="committee"
+            label="Committee"
+            defaultValue={defaults?.committee ?? ''}
+            placeholder="Academics, Finance… (optional)"
+          />
         </div>
       </div>
     </div>

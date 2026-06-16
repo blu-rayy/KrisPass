@@ -121,6 +121,7 @@ export function ScannerView({
             ? new Date(data.scanned_at).toLocaleTimeString('en-PH', {
                 hour: '2-digit',
                 minute: '2-digit',
+                timeZone: 'Asia/Manila',
               })
             : '—'
           addToast('warning', `Already checked in at ${time} · ${name}`)
@@ -146,6 +147,7 @@ export function ScannerView({
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
+                timeZone: 'Asia/Manila',
               }),
             },
             ...prev,

@@ -39,7 +39,7 @@ const LAYOUT = {
   name:       { top: Math.round(6.1 * CM) - 65.5, left: Math.round(1.3 * CM), fontSize: 45 },
   teamName:   { top: Math.round(6.9 * CM) - 34, left: Math.round(5.4 * CM), fontSize: 28 },
   // QR: top = 9.2 cm, left = 3.5 cm, size = avg of (7.0-3.5)*CM and (12.6-9.2)*CM
-  qr:         { top: Math.round(9.2 * CM) - 15, left: Math.round(3.5 * CM) - 15, size: Math.round(((7.0 - 3.5) + (12.6 - 9.2)) / 2 * CM) + 30 },
+  qr:         { top: Math.round(9.2 * CM) - 25, left: Math.round(3.5 * CM) - 15, size: Math.round(((7.0 - 3.5) + (12.6 - 9.2)) / 2 * CM) + 30 },
 }
 
 let _fonts: { regular: Buffer; bold: Buffer } | null = null

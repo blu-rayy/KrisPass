@@ -2,6 +2,7 @@ import React from 'react'
 import satori from 'satori'
 import { Resvg } from '@resvg/resvg-js'
 import QRCode from 'qrcode'
+import { PDFDocument } from 'pdf-lib'
 import { readFileSync } from 'fs'
 import path from 'path'
 
@@ -186,9 +187,18 @@ export async function renderPass(data: PassData): Promise<Buffer> {
   return Buffer.from(resvg.render().asPng())
 }
 
-export function passFilename(lastName: string, firstName: string): string {
-  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '')
-  return `${slug(lastName)}_${slug(firstName)}.png`
+export async function renderPassAsPdf(data: PassData): Promise<Buffer> {
+  const png = await renderPass(data)
+  const pdfDoc = await PDFDocument.create()
+  const img = await pdfDoc.embedPng(png)
+  const page = pdfDoc.addPage([img.width, img.height])
+  page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height })
+  return Buffer.from(await pdfDoc.save())
+}
+
+export function passFilename(eventName: string, lastName: string, firstName: string, ext: 'png' | 'pdf' = 'png'): string {
+  const clean = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '')
+  return `${clean(eventName)}_${clean(lastName)}${clean(firstName)}.${ext}`
 }
 
 export function eventDateRange(sessions: { starts_at: string }[]): string {

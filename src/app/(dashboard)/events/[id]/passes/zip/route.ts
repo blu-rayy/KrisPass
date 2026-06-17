@@ -109,7 +109,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       ? (eventFolder.folder(teamName ?? 'Unassigned') ?? eventFolder)
       : eventFolder
 
-    dest.file(passFilename(p.last_name, p.first_name), png)
+    dest.file(passFilename(event.name, p.last_name, p.first_name), png)
   })
 
   const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })

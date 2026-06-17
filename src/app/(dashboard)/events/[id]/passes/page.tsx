@@ -158,10 +158,9 @@ export default async function PassesPage({ params, searchParams }: Props) {
             {displayed.map(({ participant_id, participants: p }) => {
               if (!p) return null
               return (
-                <a
+                <div
                   key={participant_id}
-                  href={`/events/${id}/passes/${participant_id}`}
-                  className="group rounded-xl border border-gray-200 bg-white p-3 shadow-sm flex flex-col items-center gap-2 hover:border-violet-300 hover:shadow-md transition-all"
+                  className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm flex flex-col items-center gap-2"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={qrByParticipant.get(participant_id)} width={80} height={80} alt="QR" className="w-full rounded" />
@@ -169,7 +168,21 @@ export default async function PassesPage({ params, searchParams }: Props) {
                     <p className="text-xs font-medium text-gray-900 truncate">{p.last_name}, {p.first_name}</p>
                     <p className="text-[10px] text-gray-400 font-mono truncate">{p.student_number}</p>
                   </div>
-                </a>
+                  <div className="w-full grid grid-cols-2 gap-1">
+                    <a
+                      href={`/events/${id}/passes/${participant_id}`}
+                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-gray-200 bg-gray-50 py-1.5 text-[10px] font-medium text-gray-600 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 transition-all"
+                    >
+                      <Download size={10} /> PNG
+                    </a>
+                    <a
+                      href={`/events/${id}/passes/${participant_id}?format=pdf`}
+                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-gray-200 bg-gray-50 py-1.5 text-[10px] font-medium text-gray-600 hover:border-red-300 hover:bg-red-50 hover:text-red-600 transition-all"
+                    >
+                      <Download size={10} /> PDF
+                    </a>
+                  </div>
+                </div>
               )
             })}
           </div>
@@ -194,19 +207,32 @@ export default async function PassesPage({ params, searchParams }: Props) {
               const roleLabel = p.role.charAt(0).toUpperCase() + p.role.slice(1)
               const identifier = p.committee ? `${roleLabel} · ${p.committee}` : roleLabel
               return (
-                <a
+                <div
                   key={profile_id}
-                  href={`/events/${id}/passes/staff/${profile_id}`}
-                  className="group rounded-xl border border-gray-200 bg-white p-3 shadow-sm flex flex-col items-center gap-2 hover:border-amber-300 hover:shadow-md transition-all"
+                  className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm flex flex-col items-center gap-2"
                 >
                   <div className="w-full aspect-square bg-gray-50 rounded flex items-center justify-center">
-                    <Download size={20} className="text-gray-300 group-hover:text-amber-400 transition-colors" />
+                    <Download size={20} className="text-gray-300" />
                   </div>
                   <div className="w-full min-w-0 text-center">
                     <p className="text-xs font-medium text-gray-900 truncate">{p.full_name}</p>
                     <p className="text-[10px] text-gray-400 truncate">{identifier}</p>
                   </div>
-                </a>
+                  <div className="w-full grid grid-cols-2 gap-1">
+                    <a
+                      href={`/events/${id}/passes/staff/${profile_id}`}
+                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-gray-200 bg-gray-50 py-1.5 text-[10px] font-medium text-gray-600 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 transition-all"
+                    >
+                      <Download size={10} /> PNG
+                    </a>
+                    <a
+                      href={`/events/${id}/passes/staff/${profile_id}?format=pdf`}
+                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-gray-200 bg-gray-50 py-1.5 text-[10px] font-medium text-gray-600 hover:border-red-300 hover:bg-red-50 hover:text-red-600 transition-all"
+                    >
+                      <Download size={10} /> PDF
+                    </a>
+                  </div>
+                </div>
               )
             })}
           </div>

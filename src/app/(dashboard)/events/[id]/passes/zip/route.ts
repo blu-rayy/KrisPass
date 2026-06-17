@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { renderPass, passFilename, eventDateRange } from '@/lib/pass/render'
+import { renderPass, renderPassAsPdf, passFilename, eventDateRange } from '@/lib/pass/render'
 import JSZip from 'jszip'
 
 export const maxDuration = 300 // seconds (requires Vercel Pro)
@@ -37,6 +37,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const { id: eventId } = await params
   const type = req.nextUrl.searchParams.get('type') // 'attendee' | 'officer' | null (= all)
   const group = req.nextUrl.searchParams.get('group') // 'team' | null
+  const format = req.nextUrl.searchParams.get('format') === 'pdf' ? 'pdf' : 'png'
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const teamName = teamByParticipant.get(row.participant_id) ?? null
 
-    const png = await renderPass({
+    const passData = {
       firstName: p.first_name,
       lastName: p.last_name,
       middleName: p.middle_name,
@@ -103,17 +104,19 @@ export async function GET(req: NextRequest, { params }: Params) {
       qrToken: row.qr_token,
       eventName: event.name,
       eventDateRange: dateRange,
-    })
+    }
+
+    const file = format === 'pdf' ? await renderPassAsPdf(passData) : await renderPass(passData)
 
     const dest = group === 'team'
       ? (eventFolder.folder(teamName ?? 'Unassigned') ?? eventFolder)
       : eventFolder
 
-    dest.file(passFilename(event.name, p.last_name, p.first_name), png)
+    dest.file(passFilename(event.name, p.last_name, p.first_name, format), file)
   })
 
   const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })
-  const suffix = group === 'team' ? '-by-team' : type ? `-${type}s` : ''
+  const suffix = `${group === 'team' ? '-by-team' : type ? `-${type}s` : ''}-${format}`
   const eventSlug = event.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
   return new NextResponse(new Uint8Array(zipBuffer), {

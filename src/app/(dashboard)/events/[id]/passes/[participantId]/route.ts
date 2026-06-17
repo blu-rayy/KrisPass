@@ -36,7 +36,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   // Fetch participant
   const { data: participant } = await supabase
     .from('participants')
-    .select('first_name, last_name, middle_name, suffix, student_number, participant_type, blocks')
+    .select('first_name, last_name, middle_name, suffix, student_number, participant_type, blocks, committee')
     .eq('id', participantId)
     .single<{
       first_name: string
@@ -46,6 +46,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       student_number: string
       participant_type: string
       blocks: string[]
+      committee: string | null
     }>()
 
   if (!participant) return new NextResponse('Participant not found', { status: 404 })
@@ -66,6 +67,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     studentNumber: participant.student_number,
     blocks: participant.blocks ?? [],
     teamName: teamEntry?.teams?.name ?? null,
+    committee: participant.committee,
     participantType: participant.participant_type as 'attendee' | 'officer',
     qrToken: rosterEntry.qr_token,
     eventName: event.name,

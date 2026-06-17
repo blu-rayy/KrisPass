@@ -83,9 +83,9 @@ export async function renderPass(data: PassData): Promise<Buffer> {
   })
 
   const fonts = getFonts()
-  const isOrganizer = data.participantType === 'organizer'
-  const templateDataUrl = isOrganizer ? getOrganizerTemplateDataUrl() : getTemplateDataUrl()
-  const secondaryLabel = isOrganizer ? (data.committee ?? null) : (data.teamName ?? null)
+  const useOrganizerTemplate = data.participantType === 'organizer' || data.participantType === 'officer'
+  const templateDataUrl = useOrganizerTemplate ? getOrganizerTemplateDataUrl() : getTemplateDataUrl()
+  const secondaryLabel = useOrganizerTemplate ? (data.committee ?? null) : (data.teamName ?? null)
 
   const fullName = [data.firstName, data.lastName].join(' ')
 

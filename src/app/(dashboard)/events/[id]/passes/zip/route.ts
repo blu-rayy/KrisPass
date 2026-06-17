@@ -30,6 +30,7 @@ type RosterRow = {
     student_number: string
     participant_type: string
     blocks: string[]
+    committee: string | null
   } | null
 }
 
@@ -55,12 +56,11 @@ export async function GET(req: NextRequest, { params }: Params) {
   const dateRange = eventDateRange(event.event_sessions)
 
   // Fetch roster
-  const rosterQ = supabase
+  const { data: roster } = await supabase
     .from('event_roster')
-    .select('participant_id, qr_token, participants ( first_name, last_name, middle_name, suffix, student_number, participant_type, blocks )')
+    .select('participant_id, qr_token, participants ( first_name, last_name, middle_name, suffix, student_number, participant_type, blocks, committee )')
     .eq('event_id', eventId)
-
-  const { data: roster } = await rosterQ.returns<RosterRow[]>()
+    .returns<RosterRow[]>()
   if (!roster || roster.length === 0) return new NextResponse('No participants in roster', { status: 404 })
 
   // Filter by type if requested
@@ -100,6 +100,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       studentNumber: p.student_number,
       blocks: p.blocks ?? [],
       teamName,
+      committee: p.committee,
       participantType: p.participant_type as 'attendee' | 'officer',
       qrToken: row.qr_token,
       eventName: event.name,

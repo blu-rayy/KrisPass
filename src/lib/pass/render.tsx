@@ -14,6 +14,7 @@ export type PassData = {
   studentNumber: string
   blocks: string[]
   teamName?: string | null
+  committee?: string | null
   participantType: 'attendee' | 'officer' | 'organizer'
   qrToken: string
   eventName: string
@@ -65,6 +66,15 @@ function getTemplateDataUrl(): string {
   return _templateDataUrl
 }
 
+let _organizerTemplateDataUrl: string | null = null
+function getOrganizerTemplateDataUrl(): string {
+  if (!_organizerTemplateDataUrl) {
+    const pngBuf = readFileSync(path.join(process.cwd(), 'public/qr_pass_organizers.png'))
+    _organizerTemplateDataUrl = `data:image/png;base64,${pngBuf.toString('base64')}`
+  }
+  return _organizerTemplateDataUrl
+}
+
 export async function renderPass(data: PassData): Promise<Buffer> {
   const qrDataUrl = await QRCode.toDataURL(data.qrToken, {
     width: LAYOUT.qr.size,
@@ -73,7 +83,9 @@ export async function renderPass(data: PassData): Promise<Buffer> {
   })
 
   const fonts = getFonts()
-  const templateDataUrl = getTemplateDataUrl()
+  const isOrganizer = data.participantType === 'organizer'
+  const templateDataUrl = isOrganizer ? getOrganizerTemplateDataUrl() : getTemplateDataUrl()
+  const secondaryLabel = isOrganizer ? (data.committee ?? null) : (data.teamName ?? null)
 
   const fullName = [data.firstName, data.lastName].join(' ')
 
@@ -141,8 +153,8 @@ export async function renderPass(data: PassData): Promise<Buffer> {
         {fullName}
       </div>
 
-      {/* Team name */}
-      {data.teamName && (
+      {/* Team name / Committee */}
+      {secondaryLabel && (
         <div
           style={{
             position: 'absolute',
@@ -155,7 +167,7 @@ export async function renderPass(data: PassData): Promise<Buffer> {
             color: '#1a0533',
           }}
         >
-          {data.teamName}
+          {secondaryLabel}
         </div>
       )}
 

@@ -54,6 +54,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     studentNumber: identifier,
     blocks: [],
     teamName: null,
+    committee: profile.committee,
     participantType: 'organizer' as const,
     qrToken: profileId,
     eventName: event.name,

@@ -1,8 +1,9 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Download, FileArchive, FileText, ArrowLeft } from 'lucide-react'
+import { Download, ArrowLeft } from 'lucide-react'
 import { eventDateRange } from '@/lib/pass/render'
+import { PassesDropdown } from './PassesDropdown'
 import QRCode from 'qrcode'
 
 interface Props {
@@ -95,39 +96,11 @@ export default async function PassesPage({ params, searchParams }: Props) {
             <h1 className="text-xl font-semibold text-gray-900">QR Passes</h1>
             {dateRange && <p className="text-sm text-gray-500 mt-0.5">{dateRange}</p>}
           </div>
-          {/* Bulk actions */}
-          <div className="flex flex-col gap-1.5 items-end shrink-0">
-            {([
-              {
-                label: `ZIP (${activeTab === 'attendee' ? attendees.length : officers.length})`,
-                base: `/events/${id}/passes/zip?type=${activeTab}`,
-              },
-              { label: 'ZIP All', base: `/events/${id}/passes/zip` },
-              { label: 'ZIP by Team', base: `/events/${id}/passes/zip?group=team` },
-            ] as const).map(({ label, base }) => (
-              <div key={label} className="flex items-center gap-1">
-                <span className="text-xs text-gray-400 mr-1">{label}</span>
-                <a
-                  href={base}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:border-violet-300 hover:text-violet-700 transition-all"
-                >
-                  <FileArchive size={12} /> PNG
-                </a>
-                <a
-                  href={`${base}${base.includes('?') ? '&' : '?'}format=pdf`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:border-red-300 hover:text-red-600 transition-all"
-                >
-                  <FileArchive size={12} /> PDF
-                </a>
-              </div>
-            ))}
-            <a
-              href={`/events/${id}/passes/print`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:border-green-300 hover:text-green-700 transition-all"
-            >
-              <FileText size={12} /> Print PDF
-            </a>
-          </div>
+          <PassesDropdown
+            eventId={id}
+            activeTab={activeTab}
+            tabCount={activeTab === 'attendee' ? attendees.length : officers.length}
+          />
         </div>
       </div>
 

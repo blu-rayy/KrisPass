@@ -69,7 +69,7 @@ export function SessionManager({ eventId, sessions }: Props) {
                 formAction={deleteSession}
                 hiddenFields={{ session_id: session.id, event_id: eventId }}
                 trigger={
-                  <span className="block p-1 text-gray-300 hover:text-red-500 transition-colors cursor-pointer rounded">
+                  <span className="block p-1 text-gray-300 hover:text-red-500 transition-colors cursor-pointer rounded" aria-label={`Delete session ${session.name ?? ''}`}>
                     <Trash2 size={13} />
                   </span>
                 }

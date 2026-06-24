@@ -194,11 +194,11 @@ export default async function ParticipantsPage({ searchParams }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 hidden sm:table-cell">Student No.</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 hidden md:table-cell">Team</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 hidden lg:table-cell">Blocks</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Sessions</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 hidden sm:table-cell">Student No.</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 hidden md:table-cell">Team</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 hidden lg:table-cell">Blocks</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Sessions</th>
                   {isAdmin && <th className="px-4 py-3" />}
                 </tr>
               </thead>
@@ -209,9 +209,9 @@ export default async function ParticipantsPage({ searchParams }: Props) {
                   const attended = attendedSessionsByParticipant.get(participant_id) ?? 0
                   return (
                     <tr key={participant_id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" title={`${p.last_name}, ${p.first_name}`}>
                         <p className="font-medium text-gray-900">{p.last_name}, {p.first_name}</p>
-                        <p className="text-xs text-gray-400 sm:hidden">{p.student_number}</p>
+                        <p className="text-xs text-gray-500 sm:hidden">{p.student_number}</p>
                       </td>
                       <td className="px-4 py-3 text-gray-600 font-mono text-xs hidden sm:table-cell">
                         {p.student_number}
@@ -227,9 +227,12 @@ export default async function ParticipantsPage({ searchParams }: Props) {
                         {p.blocks.length > 0 ? p.blocks.join(', ') : '—'}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs font-medium ${attended > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                          {sessionCount > 0 ? `${attended}/${sessionCount}` : '—'}
-                        </span>
+                        {sessionCount > 0 ? (
+                          <span className={`inline-flex items-center gap-1 text-xs font-medium ${attended > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                            {attended}/{sessionCount}
+                            {attended > 0 && <span className="text-green-500">✓</span>}
+                          </span>
+                        ) : '—'}
                       </td>
                       {isAdmin && (
                         <td className="px-4 py-3">
@@ -294,6 +297,7 @@ function SearchBar({
       <input type="hidden" name="tab" value={activeTab} />
       <input
         name="q"
+        aria-label="Search participants"
         defaultValue={defaultValue}
         placeholder="Search by name, student no., email…"
         className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"

@@ -87,7 +87,7 @@ export default async function PassesPage({ params, searchParams }: Props) {
       <div>
         <Link
           href={`/events/${id}`}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 mb-3 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-violet-600 hover:text-violet-700 mb-3 transition-colors"
         >
           <ArrowLeft size={13} /> {event.name}
         </Link>
@@ -141,7 +141,7 @@ export default async function PassesPage({ params, searchParams }: Props) {
                   <img src={qrByParticipant.get(participant_id)} width={80} height={80} alt="QR" className="w-full rounded" />
                   <div className="w-full min-w-0 text-center">
                     <p className="text-xs font-medium text-gray-900 truncate">{p.last_name}, {p.first_name}</p>
-                    <p className="text-[10px] text-gray-400 font-mono truncate">{p.student_number}</p>
+                    <p className="text-xs text-gray-600 font-mono truncate">{p.student_number}</p>
                   </div>
                   <div className="w-full grid grid-cols-2 gap-1">
                     <a
@@ -191,7 +191,7 @@ export default async function PassesPage({ params, searchParams }: Props) {
                   </div>
                   <div className="w-full min-w-0 text-center">
                     <p className="text-xs font-medium text-gray-900 truncate">{p.full_name}</p>
-                    <p className="text-[10px] text-gray-400 truncate">{identifier}</p>
+                    <p className="text-xs text-gray-600 truncate">{identifier}</p>
                   </div>
                   <div className="w-full grid grid-cols-2 gap-1">
                     <a

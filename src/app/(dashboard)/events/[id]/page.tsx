@@ -251,7 +251,7 @@ export default async function EventDetailPage({ params }: Props) {
                 formAction={clearEventAttendances}
                 hiddenFields={{ event_id: id }}
                 trigger={
-                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-500 hover:border-red-300 hover:text-red-600 cursor-pointer transition-colors">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:border-red-300 hover:text-red-600 cursor-pointer transition-colors">
                     <X size={11} /> Clear All
                   </span>
                 }
@@ -264,18 +264,19 @@ export default async function EventDetailPage({ params }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Name</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Type</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden sm:table-cell">Session</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Time</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden md:table-cell">Scanned by</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Name</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Type</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 hidden sm:table-cell">Session</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Time</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 hidden md:table-cell">Scanned by</th>
                   {isAdmin && <th className="px-2 py-2.5" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {allAttendances.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2.5 font-medium text-gray-900">
+                    <td className="px-4 py-2.5 font-medium text-gray-900 max-w-[160px] truncate"
+                      title={c.participants ? `${c.participants.last_name}, ${c.participants.first_name}` : undefined}>
                       {c.participants ? `${c.participants.last_name}, ${c.participants.first_name}` : '—'}
                     </td>
                     <td className="px-4 py-2.5">
@@ -425,22 +426,22 @@ function ParticipantTable({
             </colgroup>
             <thead className="sticky top-0 bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Name</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden sm:table-cell">
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Name</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 hidden sm:table-cell">
                   {variant === 'attendee' ? 'Team' : 'Committee'}
                 </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden md:table-cell">
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 hidden md:table-cell">
                   {variant === 'attendee' ? 'School' : 'Student No.'}
                 </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 hidden lg:table-cell">Program</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Status</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 hidden lg:table-cell">Program</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Status</th>
                 {isAdmin && <th className="px-2 py-2.5" />}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {rows.map(({ participant_id, participants: p }) => (
                 <tr key={participant_id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2.5 font-medium text-gray-900 truncate">
+                  <td className="px-4 py-2.5 font-medium text-gray-900 truncate" title={formatName(p) || undefined}>
                     {formatName(p)}
                   </td>
                   <td className="px-4 py-2.5 text-gray-500 text-xs hidden sm:table-cell truncate">

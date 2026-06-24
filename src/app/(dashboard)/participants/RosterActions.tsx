@@ -58,12 +58,14 @@ export function RosterActions({ eventId, participantId, participantName }: Props
         onClick={handleRegenerate}
         disabled={isPending}
         title="Regenerate QR token"
+        aria-label="Regenerate QR token"
         className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-violet-600 transition-colors disabled:opacity-50"
       >
         <RefreshCw size={11} /> QR
       </button>
       <button
         onClick={() => setConfirmRemove(true)}
+        aria-label={`Remove ${participantName} from roster`}
         className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-red-600 transition-colors"
       >
         <Trash2 size={11} /> Remove

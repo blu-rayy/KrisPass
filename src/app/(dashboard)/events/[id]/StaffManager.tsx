@@ -86,15 +86,21 @@ export function StaffManager({ eventId, staff, allProfiles, isAdmin }: Props) {
           ))}
         </div>
       ) : (
-        <p className="px-5 py-4 text-sm text-gray-400">No staff assigned.</p>
+        <div className="px-5 py-8 flex flex-col items-center gap-2 text-center">
+          <Users size={24} className="text-gray-300" />
+          <p className="text-sm text-gray-400">No staff assigned yet.</p>
+        </div>
       )}
 
       {isAdmin && available.length > 0 && (
         <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
-          <p className="text-xs font-medium text-gray-500 mb-3">Assign staff</p>
           <form action={addAction} className="flex items-end gap-2">
             <div className="flex-1">
+              <label htmlFor="staff-profile" className="block text-xs font-medium text-gray-500 mb-1.5">
+                Assign staff
+              </label>
               <select
+                id="staff-profile"
                 name="profile_id"
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               >

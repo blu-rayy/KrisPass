@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { QrCode } from 'lucide-react'
+import { QrCode, ArrowLeft } from 'lucide-react'
 import { ScanEventPicker } from './ScanEventPicker'
 
 type Session = { id: string; name: string | null; starts_at: string }
@@ -26,9 +27,17 @@ export default async function ScanIndexPage() {
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-2">
-        <QrCode size={18} className="text-violet-600" />
-        <h1 className="text-xl font-semibold text-gray-900">Scan QR</h1>
+      <div>
+        <Link
+          href="/events"
+          className="inline-flex items-center gap-1.5 text-sm text-violet-600 hover:text-violet-700 mb-3 transition-colors"
+        >
+          <ArrowLeft size={13} /> Events
+        </Link>
+        <div className="flex items-center gap-2">
+          <QrCode size={18} className="text-violet-600" />
+          <h1 className="text-xl font-semibold text-gray-900">Scan QR</h1>
+        </div>
       </div>
       <ScanEventPicker events={events ?? []} />
     </div>

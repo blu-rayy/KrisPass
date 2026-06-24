@@ -62,6 +62,7 @@ export function LiveDashboard({
   const [showTeams, setShowTeams] = useState(false)
   const [newIds, setNewIds] = useState<Set<string>>(new Set())
   const supabaseRef = useRef(createClient())
+  const knownIdsRef = useRef<Set<string>>(new Set(initialAttendances.map((a) => a.id)))
 
   const present = attendances.length
   const absent = Math.max(0, rosterCount - present)
@@ -145,6 +146,48 @@ export function LiveDashboard({
     }
   }, [selectedSessionId, participantTeamMap, profileMap, markNew])
 
+  // Polling fallback — catches new rows even when Realtime isn't enabled
+  useEffect(() => {
+    if (!selectedSessionId) return
+
+    const supabase = supabaseRef.current
+
+    async function poll() {
+      const { data } = await supabase
+        .from('attendances')
+        .select('id, participant_id, scanned_at, scanned_by, participants(first_name, last_name)')
+        .eq('event_session_id', selectedSessionId!)
+        .order('scanned_at', { ascending: false })
+        .limit(50)
+        .returns<AttendanceRecord[]>()
+
+      if (!data) return
+      const fresh = data.filter((r) => !knownIdsRef.current.has(r.id))
+      if (fresh.length === 0) return
+
+      const entries: FeedEntry[] = fresh.map((r) => ({
+        id: r.id,
+        participant_id: r.participant_id,
+        scanned_at: r.scanned_at,
+        scanned_by: r.scanned_by,
+        participantName: r.participants
+          ? `${r.participants.last_name}, ${r.participants.first_name}`
+          : 'Unknown',
+        teamName: participantTeamMap[r.participant_id] ?? null,
+        scannerName: r.scanned_by ? (profileMap[r.scanned_by] ?? null) : null,
+      }))
+
+      entries.forEach((e) => {
+        knownIdsRef.current.add(e.id)
+        markNew(e.id)
+      })
+      setAttendances((prev) => [...entries, ...prev])
+    }
+
+    const interval = setInterval(poll, 4000)
+    return () => clearInterval(interval)
+  }, [selectedSessionId, participantTeamMap, profileMap, markNew])
+
   // Fetch attendance when the user changes the session selector
   async function handleSessionChange(sessionId: string) {
     setSelectedSessionId(sessionId)
@@ -155,8 +198,10 @@ export function LiveDashboard({
       .order('scanned_at', { ascending: false })
       .returns<AttendanceRecord[]>()
 
+    const rows = data ?? []
+    knownIdsRef.current = new Set(rows.map((r) => r.id))
     setAttendances(
-      (data ?? []).map((a) => ({
+      rows.map((a) => ({
         id: a.id,
         participant_id: a.participant_id,
         scanned_at: a.scanned_at,

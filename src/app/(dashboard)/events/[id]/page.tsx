@@ -472,7 +472,7 @@ function ParticipantTable({
                     <td className="px-4 py-2.5">
                       <ConfirmDialog
                         title="Remove from roster?"
-                        description={`${formatName(participants)} will be removed from this event's roster along with their attendance records.`}
+                        description={`${formatName(p)} will be removed from this event's roster along with their attendance records.`}
                         confirmLabel="Remove"
                         formAction={removeFromRoster}
                         hiddenFields={{ event_id: eventId, participant_id: participant_id }}

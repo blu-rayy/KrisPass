@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { UserPlus, Pencil, RefreshCw, Trash2 } from 'lucide-react'
+import { UserPlus, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { EventPicker } from './EventPicker'
 import { RosterActions } from './RosterActions'

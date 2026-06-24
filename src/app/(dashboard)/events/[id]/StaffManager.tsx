@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { addStaff, removeStaff } from '@/lib/actions/events'
 import { Button } from '@/components/ui/Button'
 import { UserPlus, X, CheckCircle, Users, ChevronDown } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 type StaffMember = {
   profile_id: string
@@ -68,17 +69,18 @@ export function StaffManager({ eventId, staff, allProfiles, isAdmin }: Props) {
                 </p>
               </div>
               {isAdmin && (
-                <form action={removeStaff}>
-                  <input type="hidden" name="event_id" value={eventId} />
-                  <input type="hidden" name="profile_id" value={s.profile_id} />
-                  <button
-                    type="submit"
-                    className="p-1 text-gray-300 hover:text-red-500 transition-colors rounded"
-                    title="Remove staff"
-                  >
-                    <X size={13} />
-                  </button>
-                </form>
+                <ConfirmDialog
+                  title="Remove staff member?"
+                  description={`${s.profiles.full_name} will be unassigned from this event.`}
+                  confirmLabel="Remove"
+                  formAction={removeStaff}
+                  hiddenFields={{ event_id: eventId, profile_id: s.profile_id }}
+                  trigger={
+                    <span className="block p-1 text-gray-300 hover:text-red-500 transition-colors cursor-pointer rounded">
+                      <X size={13} />
+                    </span>
+                  }
+                />
               )}
             </div>
           ))}

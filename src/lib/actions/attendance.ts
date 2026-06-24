@@ -81,3 +81,26 @@ export async function deleteAttendance(formData: FormData) {
 
   revalidatePath(`/events/${eventId}`)
 }
+
+// Direct form action — no useActionState
+export async function clearEventAttendances(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const eventId = formData.get('event_id') as string
+
+  const admin = createAdminClient()
+
+  const { data: sessions } = await admin
+    .from('event_sessions')
+    .select('id')
+    .eq('event_id', eventId)
+
+  const sessionIds = (sessions ?? []).map((s) => s.id as string)
+  if (sessionIds.length > 0) {
+    await admin.from('attendances').delete().in('event_session_id', sessionIds)
+  }
+
+  revalidatePath(`/events/${eventId}`)
+}

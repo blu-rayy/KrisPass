@@ -5,6 +5,7 @@ import { addSession, deleteSession } from '@/lib/actions/events'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Plus, Trash2, CheckCircle, CalendarDays, ChevronDown } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 type Session = {
   id: string
@@ -61,17 +62,18 @@ export function SessionManager({ eventId, sessions }: Props) {
                   )}
                 </p>
               </div>
-              <form action={deleteSession}>
-                <input type="hidden" name="session_id" value={session.id} />
-                <input type="hidden" name="event_id" value={eventId} />
-                <button
-                  type="submit"
-                  className="p-1 text-gray-300 hover:text-red-500 transition-colors rounded"
-                  title="Remove session"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </form>
+              <ConfirmDialog
+                title="Delete this session?"
+                description={`"${session.name ?? fmtSessionTime(session.starts_at)}" and all its attendance records will be permanently deleted.`}
+                confirmLabel="Delete"
+                formAction={deleteSession}
+                hiddenFields={{ session_id: session.id, event_id: eventId }}
+                trigger={
+                  <span className="block p-1 text-gray-300 hover:text-red-500 transition-colors cursor-pointer rounded">
+                    <Trash2 size={13} />
+                  </span>
+                }
+              />
             </div>
           ))}
         </div>

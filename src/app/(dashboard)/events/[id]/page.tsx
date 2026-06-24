@@ -10,7 +10,8 @@ import { StaffManager } from './StaffManager'
 import { ScanQrButton } from './ScanQrButton'
 import { formatDateTime } from '@/lib/utils'
 import { removeFromRoster } from '@/lib/actions/events'
-import { deleteAttendance } from '@/lib/actions/attendance'
+import { deleteAttendance, clearEventAttendances } from '@/lib/actions/attendance'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 // ── types ─────────────────────────────────────────────────────────────────
 
@@ -240,7 +241,23 @@ export default async function EventDetailPage({ params }: Props) {
         <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
           <Clock size={15} className="text-gray-400" />
           <h2 className="text-sm font-semibold text-gray-900">Check-ins</h2>
-          <span className="ml-auto text-xs text-gray-400">{allAttendances.length} total</span>
+          <span className="ml-2 text-xs text-gray-400">{allAttendances.length} total</span>
+          {isAdmin && allAttendances.length > 0 && (
+            <span className="ml-auto">
+              <ConfirmDialog
+                title="Clear all check-ins?"
+                description={`This will permanently delete all ${allAttendances.length} attendance records for this event. This cannot be undone.`}
+                confirmLabel="Clear All"
+                formAction={clearEventAttendances}
+                hiddenFields={{ event_id: id }}
+                trigger={
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-500 hover:border-red-300 hover:text-red-600 cursor-pointer transition-colors">
+                    <X size={11} /> Clear All
+                  </span>
+                }
+              />
+            </span>
+          )}
         </div>
         {allAttendances.length > 0 ? (
           <div className="overflow-x-auto">
@@ -283,17 +300,18 @@ export default async function EventDetailPage({ params }: Props) {
                     </td>
                     {isAdmin && (
                       <td className="px-2 py-2.5">
-                        <form action={deleteAttendance}>
-                          <input type="hidden" name="attendance_id" value={c.id} />
-                          <input type="hidden" name="event_id" value={id} />
-                          <button
-                            type="submit"
-                            title="Delete check-in"
-                            className="text-gray-300 hover:text-red-500 transition-colors"
-                          >
-                            <X size={14} />
-                          </button>
-                        </form>
+                        <ConfirmDialog
+                          title="Delete this check-in?"
+                          description="This attendance record will be permanently removed."
+                          confirmLabel="Delete"
+                          formAction={deleteAttendance}
+                          hiddenFields={{ attendance_id: c.id, event_id: id }}
+                          trigger={
+                            <span className="block p-1 text-gray-300 hover:text-red-500 transition-colors cursor-pointer rounded">
+                              <X size={14} />
+                            </span>
+                          }
+                        />
                       </td>
                     )}
                   </tr>
@@ -451,17 +469,18 @@ function ParticipantTable({
                   </td>
                   {isAdmin && (
                     <td className="px-4 py-2.5">
-                      <form action={removeFromRoster}>
-                        <input type="hidden" name="event_id" value={eventId} />
-                        <input type="hidden" name="participant_id" value={participant_id} />
-                        <button
-                          type="submit"
-                          className="p-1 text-gray-300 hover:text-red-500 transition-colors rounded"
-                          title="Remove from roster"
-                        >
-                          <X size={13} />
-                        </button>
-                      </form>
+                      <ConfirmDialog
+                        title="Remove from roster?"
+                        description={`${formatName(participants)} will be removed from this event's roster along with their attendance records.`}
+                        confirmLabel="Remove"
+                        formAction={removeFromRoster}
+                        hiddenFields={{ event_id: eventId, participant_id: participant_id }}
+                        trigger={
+                          <span className="block p-1 text-gray-300 hover:text-red-500 transition-colors cursor-pointer rounded">
+                            <X size={13} />
+                          </span>
+                        }
+                      />
                     </td>
                   )}
                 </tr>

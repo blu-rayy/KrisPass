@@ -3,15 +3,16 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
   Pencil, MapPin, Upload, Ticket, Radio,
-  Download, CheckCircle2, Clock, Users, UserCheck, X,
+  Download, CheckCircle2, Users, UserCheck, X,
 } from 'lucide-react'
 import { SessionManager } from './SessionManager'
 import { StaffManager } from './StaffManager'
 import { ScanQrButton } from './ScanQrButton'
 import { formatDateTime } from '@/lib/utils'
 import { removeFromRoster } from '@/lib/actions/events'
-import { deleteAttendance, clearEventAttendances } from '@/lib/actions/attendance'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { CheckInsTable } from './CheckInsTable'
+import type { CheckInRow } from './CheckInsTable'
 
 // ── types ─────────────────────────────────────────────────────────────────
 
@@ -68,7 +69,13 @@ type CheckIn = {
   participant_id: string
   scanned_at: string
   scanned_by: string | null
-  participants: { first_name: string; last_name: string; participant_type: string } | null
+  participants: {
+    first_name: string
+    last_name: string
+    participant_type: string
+    school: string | null
+    degree_program: string | null
+  } | null
   event_sessions: { name: string | null } | null
 }
 
@@ -133,7 +140,7 @@ export default async function EventDetailPage({ params }: Props) {
     sessionIds.length > 0
       ? supabase
           .from('attendances')
-          .select('id, participant_id, scanned_at, scanned_by, event_sessions ( name ), participants ( first_name, last_name, participant_type )')
+          .select('id, participant_id, scanned_at, scanned_by, event_sessions ( name ), participants ( first_name, last_name, participant_type, school, degree_program )')
           .in('event_session_id', sessionIds)
           .order('scanned_at', { ascending: false })
           .returns<CheckIn[]>()
@@ -166,6 +173,23 @@ export default async function EventDetailPage({ params }: Props) {
     const { data: sp } = await supabase.from('profiles').select('id, full_name').in('id', scannedByIds)
     sp?.forEach((p) => staffById.set(p.id, p.full_name))
   }
+
+  // Enrich check-ins with team, school, program, scanner name
+  const checkInRows: CheckInRow[] = allAttendances.map((c) => ({
+    id: c.id,
+    participant_id: c.participant_id,
+    scanned_at: c.scanned_at,
+    scanned_by: c.scanned_by,
+    participantName: c.participants
+      ? `${c.participants.last_name}, ${c.participants.first_name}`
+      : 'Unknown',
+    participantType: c.participants?.participant_type ?? 'attendee',
+    sessionName: c.event_sessions?.name ?? null,
+    teamName: teamByParticipant.get(c.participant_id) ?? null,
+    school: c.participants?.school ?? null,
+    degreeProgram: c.participants?.degree_program ?? null,
+    scannerName: c.scanned_by ? (staffById.get(c.scanned_by) ?? null) : null,
+  }))
 
   // Stats
   const checkedInIds = new Set(allAttendances.map((a) => a.participant_id))
@@ -237,93 +261,7 @@ export default async function EventDetailPage({ params }: Props) {
       </div>
 
       {/* ── Check-ins ── */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-          <Clock size={15} className="text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-900">Check-ins</h2>
-          <span className="ml-2 text-xs text-gray-400">{allAttendances.length} total</span>
-          {isAdmin && allAttendances.length > 0 && (
-            <span className="ml-auto">
-              <ConfirmDialog
-                title="Clear all check-ins?"
-                description={`This will permanently delete all ${allAttendances.length} attendance records for this event. This cannot be undone.`}
-                confirmLabel="Clear All"
-                formAction={clearEventAttendances}
-                hiddenFields={{ event_id: id }}
-                trigger={
-                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:border-red-300 hover:text-red-600 cursor-pointer transition-colors">
-                    <X size={11} /> Clear All
-                  </span>
-                }
-              />
-            </span>
-          )}
-        </div>
-        {allAttendances.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Name</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Type</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 hidden sm:table-cell">Session</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Time</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 hidden md:table-cell">Scanned by</th>
-                  {isAdmin && <th className="px-2 py-2.5" />}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {allAttendances.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2.5 font-medium text-gray-900 max-w-[160px] truncate"
-                      title={c.participants ? `${c.participants.last_name}, ${c.participants.first_name}` : undefined}>
-                      {c.participants ? `${c.participants.last_name}, ${c.participants.first_name}` : '—'}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      {c.participants && (
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                          c.participants.participant_type === 'officer'
-                            ? 'bg-violet-100 text-violet-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {c.participants.participant_type}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-gray-500 text-xs hidden sm:table-cell">
-                      {c.event_sessions?.name ?? '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">
-                      {formatDateTime(c.scanned_at)}
-                    </td>
-                    <td className="px-4 py-2.5 text-gray-500 text-xs hidden md:table-cell">
-                      {c.scanned_by ? (staffById.get(c.scanned_by) ?? '—') : '—'}
-                    </td>
-                    {isAdmin && (
-                      <td className="px-2 py-2.5">
-                        <ConfirmDialog
-                          title="Delete this check-in?"
-                          description="This attendance record will be permanently removed."
-                          confirmLabel="Delete"
-                          formAction={deleteAttendance}
-                          hiddenFields={{ attendance_id: c.id, event_id: id }}
-                          trigger={
-                            <span className="block p-1 text-gray-300 hover:text-red-500 transition-colors cursor-pointer rounded">
-                              <X size={14} />
-                            </span>
-                          }
-                        />
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="px-5 py-6 text-sm text-gray-400 text-center">No check-ins yet.</p>
-        )}
-      </div>
+      <CheckInsTable eventId={id} checkIns={checkInRows} isAdmin={isAdmin} />
 
       {/* ── Participants ── */}
       <div className="space-y-4">

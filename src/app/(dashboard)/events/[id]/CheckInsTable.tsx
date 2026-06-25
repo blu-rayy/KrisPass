@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Clock, X, Filter } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { clearEventAttendances, deleteAttendance } from '@/lib/actions/attendance'
@@ -33,8 +33,15 @@ type Filters = {
   program: string
 }
 
+const PAGE_INITIAL = 25
+const PAGE_MORE    = 50
+
 export function CheckInsTable({ eventId, checkIns, isAdmin }: Props) {
-  const [filters, setFilters] = useState<Filters>({ type: '', session: '', team: '', program: '' })
+  const [filters, setFilters]      = useState<Filters>({ type: '', session: '', team: '', program: '' })
+  const [visibleCount, setVisible] = useState(PAGE_INITIAL)
+
+  // Reset pagination when filters change
+  useEffect(() => { setVisible(PAGE_INITIAL) }, [filters])
 
   // Unique option lists derived from data
   const sessions  = useMemo(() => [...new Set(checkIns.map((c) => c.sessionName).filter(Boolean) as string[])].sort(), [checkIns])
@@ -48,6 +55,9 @@ export function CheckInsTable({ eventId, checkIns, isAdmin }: Props) {
     if (filters.program && c.degreeProgram   !== filters.program) return false
     return true
   }), [checkIns, filters])
+
+  const visible    = filtered.slice(0, visibleCount)
+  const remaining  = filtered.length - visibleCount
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length
   const set = (key: keyof Filters) => (e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -129,7 +139,7 @@ export function CheckInsTable({ eventId, checkIns, isAdmin }: Props) {
       )}
 
       {/* Table */}
-      {filtered.length > 0 ? (
+      {filtered.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -145,7 +155,7 @@ export function CheckInsTable({ eventId, checkIns, isAdmin }: Props) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtered.map((c) => (
+              {visible.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-2.5 font-medium text-gray-900 max-w-[160px] truncate" title={c.participantName}>
                     {c.participantName}
@@ -199,7 +209,37 @@ export function CheckInsTable({ eventId, checkIns, isAdmin }: Props) {
             </tbody>
           </table>
         </div>
-      ) : (
+      )}
+
+      {/* Load More */}
+      {filtered.length > 0 && remaining > 0 && (
+        <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
+          <span className="text-xs text-gray-400">
+            Showing {visible.length} of {filtered.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setVisible((v) => v + PAGE_MORE)}
+              className="text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors"
+            >
+              Load {Math.min(remaining, PAGE_MORE)} more
+            </button>
+            {remaining > PAGE_MORE && (
+              <>
+                <span className="text-gray-300">·</span>
+                <button
+                  onClick={() => setVisible(filtered.length)}
+                  className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Show all {filtered.length}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {filtered.length === 0 && (
         <div className="px-5 py-8 text-center">
           {checkIns.length > 0 ? (
             <>

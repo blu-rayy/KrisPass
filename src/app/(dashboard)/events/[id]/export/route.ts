@@ -15,14 +15,15 @@ export async function GET(
   // Fetch event name
   const { data: event } = await supabase
     .from('events')
-    .select('name, event_sessions ( id, name, starts_at )')
+    .select('name, event_sessions ( id, name, starts_at, ends_at )')
     .eq('id', id)
-    .single<{ name: string; event_sessions: { id: string; name: string | null; starts_at: string }[] }>()
+    .single<{ name: string; event_sessions: { id: string; name: string | null; starts_at: string; ends_at: string | null }[] }>()
 
   if (!event) return new NextResponse('Event not found', { status: 404 })
 
   const sessionIds = event.event_sessions.map((s) => s.id)
-  const sessionById = new Map(event.event_sessions.map((s) => [s.id, s.name ?? s.starts_at]))
+  const sessionById   = new Map(event.event_sessions.map((s) => [s.id, s.name ?? s.starts_at]))
+  const sessionEndsAt = new Map(event.event_sessions.map((s) => [s.id, s.ends_at ?? null]))
 
   if (sessionIds.length === 0) {
     const csv = Papa.unparse([{ message: 'No sessions for this event.' }])
@@ -34,7 +35,7 @@ export async function GET(
     event_session_id: string
     scanned_at: string
     scanned_by: string | null
-    participants: { first_name: string; last_name: string; student_number: string; school_email: string; participant_type: string } | null
+    participants: { first_name: string; last_name: string; student_number: string; school_email: string; participant_type: string; blocks: string[] } | null
     profiles: { full_name: string } | null
   }
 
@@ -43,7 +44,7 @@ export async function GET(
     .from('attendances')
     .select(`
       id, event_session_id, scanned_at, scanned_by,
-      participants ( first_name, last_name, student_number, school_email, participant_type ),
+      participants ( first_name, last_name, student_number, school_email, participant_type, blocks ),
       profiles:scanned_by ( full_name )
     `)
     .in('event_session_id', sessionIds)
@@ -55,23 +56,29 @@ export async function GET(
     return csvResponse(csv, event.name)
   }
 
-  const rows = attendances.map((a) => ({
-    last_name: a.participants?.last_name ?? '',
-    first_name: a.participants?.first_name ?? '',
-    student_number: a.participants?.student_number ?? '',
-    school_email: a.participants?.school_email ?? '',
-    participant_type: a.participants?.participant_type ?? '',
-    session: sessionById.get(a.event_session_id) ?? '',
-    scanned_at: a.scanned_at
-      ? new Date(a.scanned_at).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })
-      : '',
-    scanned_by: a.profiles?.full_name ?? '',
-  }))
+  const fmt = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : ''
+
+  const rows = attendances.map((a) => {
+    const endsAt = sessionEndsAt.get(a.event_session_id) ?? null
+    return {
+      last_name:        a.participants?.last_name ?? '',
+      first_name:       a.participants?.first_name ?? '',
+      student_number:   a.participants?.student_number ?? '',
+      school_email:     a.participants?.school_email ?? '',
+      participant_type: a.participants?.participant_type ?? '',
+      blocks:           (a.participants?.blocks ?? []).join(', '),
+      session:          sessionById.get(a.event_session_id) ?? '',
+      time_in:          fmt(a.scanned_at),
+      time_out:         fmt(endsAt),
+      scanned_by:       a.profiles?.full_name ?? '',
+    }
+  })
 
   const csv = Papa.unparse(rows, {
     columns: [
       'last_name', 'first_name', 'student_number', 'school_email',
-      'participant_type', 'session', 'scanned_at', 'scanned_by',
+      'participant_type', 'blocks', 'session', 'time_in', 'time_out', 'scanned_by',
     ],
   })
 

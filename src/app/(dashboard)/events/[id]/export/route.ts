@@ -35,7 +35,7 @@ export async function GET(
     event_session_id: string
     scanned_at: string
     scanned_by: string | null
-    participants: { first_name: string; last_name: string; student_number: string; school_email: string; participant_type: string; blocks: string[] } | null
+    participants: { first_name: string; last_name: string; student_number: string; school_email: string; personal_email: string; participant_type: string; blocks: string[] } | null
     profiles: { full_name: string } | null
   }
 
@@ -44,7 +44,7 @@ export async function GET(
     .from('attendances')
     .select(`
       id, event_session_id, scanned_at, scanned_by,
-      participants ( first_name, last_name, student_number, school_email, participant_type, blocks ),
+      participants ( first_name, last_name, student_number, school_email, personal_email, participant_type, blocks ),
       profiles:scanned_by ( full_name )
     `)
     .in('event_session_id', sessionIds)
@@ -59,6 +59,16 @@ export async function GET(
   const fmt = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : ''
 
+  function totalTime(inIso: string, outIso: string | null): string {
+    if (!outIso) return ''
+    const diffMs = new Date(outIso).getTime() - new Date(inIso).getTime()
+    if (diffMs <= 0) return ''
+    const totalMins = Math.floor(diffMs / 60000)
+    const h = Math.floor(totalMins / 60)
+    const m = totalMins % 60
+    return h > 0 ? `${h}h ${m}m` : `${m}m`
+  }
+
   const rows = attendances.map((a) => {
     const endsAt = sessionEndsAt.get(a.event_session_id) ?? null
     return {
@@ -66,19 +76,21 @@ export async function GET(
       first_name:       a.participants?.first_name ?? '',
       student_number:   a.participants?.student_number ?? '',
       school_email:     a.participants?.school_email ?? '',
+      personal_email:   a.participants?.personal_email ?? '',
       participant_type: a.participants?.participant_type ?? '',
       blocks:           (a.participants?.blocks ?? []).join(', '),
       session:          sessionById.get(a.event_session_id) ?? '',
       time_in:          fmt(a.scanned_at),
       time_out:         fmt(endsAt),
+      total_time:       totalTime(a.scanned_at, endsAt),
       scanned_by:       a.profiles?.full_name ?? '',
     }
   })
 
   const csv = Papa.unparse(rows, {
     columns: [
-      'last_name', 'first_name', 'student_number', 'school_email',
-      'participant_type', 'blocks', 'session', 'time_in', 'time_out', 'scanned_by',
+      'last_name', 'first_name', 'student_number', 'school_email', 'personal_email',
+      'participant_type', 'blocks', 'session', 'time_in', 'time_out', 'total_time', 'scanned_by',
     ],
   })
 
